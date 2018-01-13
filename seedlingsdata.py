@@ -138,15 +138,15 @@ class PreProcess(object):
 class SeedlingsData(object):
 
     def __init__(self):
-        self._data = []
-
         self.paths = []
+
+        self._data = []
         self.batch_size = 128
+        self.validate = 0.0
+        self.train_size = 0
+        self.validate_size = 0
 
-        # define iter index
-        self.iter_index = 0
-
-    def load(self, train_data_paths: list, train=True, shuffle=True):
+    def load(self, train_data_paths: list, train=True, shuffle=True, validate=0.2):
 
         """
         Load data and save in a list like this:
@@ -155,11 +155,12 @@ class SeedlingsData(object):
         :param train_data_paths: path of the data
         :param train: whether is the train data
         :param shuffle: should shuffle
+        :param validate: validation ratio
         :return:
         """
-        self.data.clear()
+        self._data.clear()
         self.paths = train_data_paths
-        self.iter_index = 0
+        self.validate = validate
 
         if train:
             for data_path in train_data_paths:
@@ -168,46 +169,49 @@ class SeedlingsData(object):
                     for root, dirs, files in os.walk(os.path.join(data_path, directory)):
                         for file in files:
                             # Save file path and class
-                            self.data.append([os.path.join(root, file), directory])
+                            self._data.append([os.path.join(root, file), directory])
         else:
             for data_path in train_data_paths:
                 for root, dirs, files in os.walk(os.path.join(data_path, data_path)):
                     for file in files:
                         # Save file path and undefined class
-                        self.data.append([os.path.join(root, file), ""])
+                        self._data.append([os.path.join(root, file), ""])
         if shuffle:
-            random.shuffle(self.data)
+            random.shuffle(self._data)
+
+        self.train_size = int(len(self._data) * (1 - self.validate))
+        self.validate_size = len(self._data) - int(len(self._data) * self.validate)
 
     def set_batch_size(self, size):
         """
         Set the batch size for training
-        :param size:
+        :param size: batch size
         :return:
         """
         self.batch_size = size
 
     @property
-    def data(self) -> list:
-        return self._data
+    def train_data(self) -> list:
+        return self._data[:self.train_size]
 
-    def __iter__(self):
-        return self
+    @property
+    def validate_data(self) -> list:
+        return self._data[self.train_size:]
 
-    def __next__(self):
-        if self.iter_index + self.batch_size >= len(self.data):
-            self.iter_index = 0
-            raise StopIteration("Iter end")
-
-        batch_data = self.data[self.iter_index: self.iter_index + self.batch_size]
-        batch_images = [cv2.imread(image[0]) for image in batch_data]
-        batch_labels = [image[1] for image in batch_data]
-        self.iter_index += self.batch_size
-        return batch_images, batch_labels
-
-    def generate(self):
+    def generate_train_data(self):
         current_index = 0
-        while current_index + self.batch_size < len(self.data):
-            batch_data = self.data[current_index: current_index + self.batch_size]
+        while current_index + self.batch_size < self.train_size:
+            batch_data = self._data[current_index: current_index + self.batch_size]
+            batch_images = [cv2.imread(image[0]) for image in batch_data]
+            batch_labels = [image[1] for image in batch_data]
+
+            yield batch_images, batch_labels
+            current_index += self.batch_size
+
+    def generate_validate_data(self):
+        current_index = self.train_size
+        while current_index + self.batch_size < len(self._data):
+            batch_data = self._data[current_index: current_index + self.batch_size]
             batch_images = [cv2.imread(image[0]) for image in batch_data]
             batch_labels = [image[1] for image in batch_data]
 
@@ -237,15 +241,17 @@ if __name__ == "__main__":
     data = SeedlingsData()
     data.load([test_output_resize_file_path, test_output_rotate_file_path, test_output_crop_file_path])
 
-    print(len(data.data))
-    print((data.data[0]))
+    print(len(data.train_data))
+    print((data.train_data[0]))
 
-    # Iterate method 1
-    # for images, labels in data:
-    #     print(type(images))
-    #     print(labels)
+    print(len(data.validate_data))
+    print((data.validate_data[0]))
 
-    # Iterate method 2
-    # for images, labels in data.generate():
+    # Iterate method
+    for images, labels in data.generate_train_data():
+        print(type(images))
+        print(labels)
+
+    # for images, labels in data.generate_validate_data():
     #     print(type(images))
     #     print(labels)
