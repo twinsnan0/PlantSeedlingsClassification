@@ -6,6 +6,8 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 
+import constants
+
 
 class PreProcess(object):
 
@@ -198,7 +200,10 @@ class SeedlingsData(object):
             random.shuffle(self._data)
 
         self.train_size = int(len(self._data) * (1 - self.validate))
-        self.validate_size = len(self._data) - int(len(self._data) * self.validate)
+        self.validate_size = int(len(self._data) * self.validate)
+
+        print("train_size:{}".format(self.train_size))
+        print("validate_size:{}".format(self.validate_size))
 
     def set_batch_size(self, size):
         """
@@ -249,25 +254,21 @@ class SeedlingsData(object):
 
 if __name__ == "__main__":
     # Replace with your directory
-    test_file_path = r"D:\Project\Space\Python\Data\seedings_data\train\train"
-    test_output_resize_file_path = r"D:\Project\Space\Python\Data\seedings_data\train\resize"
-    test_output_rotate_file_path = r"D:\Project\Space\Python\Data\seedings_data\train\rotate"
-    test_output_crop_file_path = r"D:\Project\Space\Python\Data\seedings_data\train\crop"
-
     # First we should pre-process the image data
     # Resize
-    # preprocess = PreProcess()
-    # preprocess.resize(test_file_path, test_output_resize_file_path)
+    pre_process = PreProcess()
+    pre_process.resize(constants.test_file_path, constants.test_output_resize_file_path)
 
     # Rotate
-    # preprocess.rotate(test_output_resize_file_path, test_output_rotate_file_path)
+    pre_process.rotate(constants.test_output_resize_file_path, constants.test_output_rotate_file_path)
 
     # Crop
-    # preprocess.crop(test_output_resize_file_path, test_output_crop_file_path)
+    pre_process.crop(constants.test_output_resize_file_path, constants.test_output_crop_file_path)
 
     # After pre-processing, we need to input data for training
     data = SeedlingsData()
-    data.load([test_output_resize_file_path, test_output_rotate_file_path, test_output_crop_file_path])
+    data.load([constants.test_output_resize_file_path, constants.test_output_rotate_file_path,
+               constants.test_output_crop_file_path])
 
     print(len(data.train_data))
     print((data.train_data[0]))
