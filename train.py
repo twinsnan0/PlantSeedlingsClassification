@@ -17,7 +17,6 @@ def train():
 
     # Create network
     net = Net()
-    net.cuda()
     print(net)
 
     for epoch in range(0, 50):
@@ -27,8 +26,8 @@ def train():
 
 def train_epoch(net: Net, data: SeedlingsData, epoch: int):
     for batch_index, images, labels in data.generate_train_data():
-        batch_x = Variable(torch.from_numpy(images)).cuda().float() / 255
-        batch_y = Variable(torch.from_numpy(labels)).cuda().long()
+        batch_x = Variable(torch.from_numpy(images)).float() / 255
+        batch_y = Variable(torch.from_numpy(labels)).long()
 
         output = net(batch_x)
 
@@ -48,8 +47,8 @@ def validate_epoch(net: Net, data: SeedlingsData, epoch: int):
     validate_total = 0
     validate_right = 0
     for validate_batch_index, validate_images, validate_labels in data.generate_validate_data():
-        validate_batch_x = Variable(torch.from_numpy(validate_images)).cuda().float() / 255
-        validate_batch_y = Variable(torch.from_numpy(validate_labels)).cuda().long()
+        validate_batch_x = Variable(torch.from_numpy(validate_images)).float() / 255
+        validate_batch_y = Variable(torch.from_numpy(validate_labels)).long()
         validate_output = net(validate_batch_x)
         _, predict_batch_y = torch.max(validate_output, 1)
         validate_total += validate_batch_y.size(0)

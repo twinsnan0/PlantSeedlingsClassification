@@ -1,16 +1,14 @@
 import os
 import random
-
 import cv2
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import OneHotEncoder
-
 import constants
+
+WIDTH = 224
+HEIGHT = 224
 
 
 class PreProcess(object):
-
     def __init__(self):
         pass
 
@@ -43,11 +41,12 @@ class PreProcess(object):
                     origin_name = file[0:last_index]
                     output_file_name = os.path.join(out_directory_path,
                                                     str(origin_name) + "_rotate_" + str(angle) + ".png")
+                    rotated = PreProcess._resize(rotated, WIDTH, HEIGHT)
                     cv2.imwrite(output_file_name, rotated)
                     print("Saved: ", output_file_name)
 
     @staticmethod
-    def resize(source_path: str, output_path: str, resize_width=320, resize_height=320):
+    def resize(source_path: str, output_path: str, resize_width=WIDTH, resize_height=HEIGHT):
         """
         Resize the image
         :param source_path: source directory path
@@ -76,7 +75,7 @@ class PreProcess(object):
                 print("Saved: ", output_file_name)
 
     @staticmethod
-    def crop(source_path: str, output_path: str, crop_ratio=0.5, resize_width=320, resize_height=320):
+    def crop(source_path: str, output_path: str, crop_ratio=0.8, resize_width=WIDTH, resize_height=HEIGHT):
         """
         Crop the image then resize to the specified size
         :param source_path: source directory path
@@ -118,9 +117,11 @@ class PreProcess(object):
 
     @staticmethod
     def _crop(image, crop_ratio):
+        offset_height = random.random() * (1 - crop_ratio)
+        offset_width = random.random() * (1 - crop_ratio)
         h, w = image.shape[:2]
-        return image[int(w * ((1 - crop_ratio) / 2)):int(w * (1 - (1 - crop_ratio) / 2)),
-               int(h * ((1 - crop_ratio) / 2)):int(h * (1 - (1 - crop_ratio) / 2))]
+        return image[int(offset_width * w):int((crop_ratio + offset_width) * w),
+               int(offset_height * h):int((crop_ratio + offset_height) * h)]
 
     @staticmethod
     def _resize(image, width=None, height=None, inter=cv2.INTER_AREA):
@@ -151,18 +152,10 @@ class SeedlingsData(object):
         self.train_size = 0
         self.validate_size = 0
 
-        seedlings_labels = ["Black-grass", "Charlock", "Cleavers", "Common Chickweed", "Common wheat", "Fat Hen",
-                            "Loose Silky-bent", "Maize", "Scentless Mayweed", "Shepherds Purse",
-                            "Small-flowered Cranesbill",
-                            "Sugar beet"]
+        seedlings_labels = ["Black-grass", "Charlock", "Cleavers", "Common Chickweed", "Common wheat",
+                            "Fat Hen", "Loose Silky-bent", "Maize", "Scentless Mayweed",
+                            "Shepherds Purse", "Small-flowered Cranesbill", "Sugar beet"]
 
-        # values = np.array(seedlings_labels)
-        #
-        # label_encoder = LabelEncoder()
-        # integer_encoded = label_encoder.fit_transform(values)
-        # onehot_encoder = OneHotEncoder(sparse=False)
-        # integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
-        # onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
         for index, label in enumerate(seedlings_labels):
             self.labels[label] = index
 
@@ -282,6 +275,3 @@ if __name__ == "__main__":
         print(images.shape)
         print(labels.shape)
 
-    # for images, labels in data.generate_validate_data():
-    #     print(type(images))
-    #     print(labels)
