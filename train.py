@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
+from torchvision import transforms
 
 from model import Net
 from seedlingsdata import SeedlingsData
@@ -15,18 +16,21 @@ def train():
                constants.test_output_crop_file_path], validate=0.05)
     data.set_batch_size(32)
 
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
     # Create network
     net = Net()
     print(net)
 
     for epoch in range(0, 50):
-        train_epoch(net, data, epoch)
-        validate_epoch(net, data, epoch)
+        train_epoch(net, data, epoch, normalize)
+        validate_epoch(net, data, epoch, normalize)
 
 
-def train_epoch(net: Net, data: SeedlingsData, epoch: int):
+def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize):
     for batch_index, images, labels in data.generate_train_data():
-        batch_x = Variable(torch.from_numpy(images)).float() / 255
+        tensor = normalize(torch.from_numpy(images))
+        batch_x = Variable(tensor).float()
         batch_y = Variable(torch.from_numpy(labels)).long()
 
         output = net(batch_x)
@@ -43,11 +47,12 @@ def train_epoch(net: Net, data: SeedlingsData, epoch: int):
             pass
 
 
-def validate_epoch(net: Net, data: SeedlingsData, epoch: int):
+def validate_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize):
     validate_total = 0
     validate_right = 0
     for validate_batch_index, validate_images, validate_labels in data.generate_validate_data():
-        validate_batch_x = Variable(torch.from_numpy(validate_images)).float() / 255
+        validate_tensor = normalize(torch.from_numpy(validate_images))
+        validate_batch_x = Variable(validate_tensor).float()
         validate_batch_y = Variable(torch.from_numpy(validate_labels)).long()
         validate_output = net(validate_batch_x)
         _, predict_batch_y = torch.max(validate_output, 1)
