@@ -1,7 +1,9 @@
 import os
 import random
+
 import cv2
 import numpy as np
+
 import constants
 
 WIDTH = 224
@@ -222,7 +224,8 @@ class SeedlingsData(object):
             h, w, c = cv2.imread(batch_data[0][0]).shape[:]
             batch_images = np.zeros((self.batch_size, c, w, h), dtype=np.float)
             for index, image in enumerate(batch_data):
-                batch_images[index] = (np.transpose(cv2.imread(image[0]), (2, 0, 1)))
+                image_rgb = cv2.cvtColor(cv2.imread(image[0]), cv2.COLOR_BGR2RGB)
+                batch_images[index] = (np.transpose(image_rgb, (2, 0, 1)))
             batch_labels = np.array([image[1] for image in batch_data])
 
             yield batch_index, batch_images, batch_labels
@@ -237,7 +240,8 @@ class SeedlingsData(object):
             h, w, c = cv2.imread(batch_data[0][0]).shape[:]
             batch_images = np.zeros((self.batch_size, c, w, h), dtype=np.float)
             for index, image in enumerate(batch_data):
-                batch_images[index] = (np.transpose(cv2.imread(image[0]), (2, 0, 1)))
+                image_rgb = cv2.cvtColor(cv2.imread(image[0]), cv2.COLOR_BGR2RGB)
+                batch_images[index] = (np.transpose(image_rgb, (2, 0, 1)))
             batch_labels = np.array([image[1] for image in batch_data])
 
             yield batch_index, batch_images, batch_labels
@@ -274,4 +278,3 @@ if __name__ == "__main__":
         print(type(images))
         print(images.shape)
         print(labels.shape)
-
