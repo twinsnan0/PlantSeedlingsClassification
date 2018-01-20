@@ -5,6 +5,8 @@ from kaggle_data.downloader import KaggleDataDownloader
 
 import constants
 
+# To run this code please install the Kaggle-data-downloader
+# pip install -U git+https://github.com/EKami/kaggle-data-downloader.git
 
 def download(competition_name, data_file_name, directory=None, file_name="test"):
     if directory is None:
