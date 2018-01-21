@@ -1,15 +1,12 @@
-import json
 import os
-
 from kaggle_data.downloader import KaggleDataDownloader
 
 import constants
 
-
 # To run this code please install the Kaggle-data-downloader
 # pip install -U git+https://github.com/EKami/kaggle-data-downloader.git
 
-def download(competition_name, data_file_name, directory=None, file_name="test"):
+def download(user_pwd,competition_name, data_file_name, directory=None, file_name="test"):
     if directory is None:
         directory = os.getcwd()
 
@@ -19,11 +16,9 @@ def download(competition_name, data_file_name, directory=None, file_name="test")
     print(os.path.abspath(file_path))
 
     # We can not download the data without user info
-    username, password = get_user_info()
-    downloader = KaggleDataDownloader(username, password, competition_name)
+    downloader = KaggleDataDownloader(user_pwd[0], user_pwd[1], competition_name)
 
     download_file_path = os.path.join(directory, data_file_name)
-
     if os.path.exists(download_file_path):
         print("Data exists")
     else:
@@ -33,14 +28,15 @@ def download(competition_name, data_file_name, directory=None, file_name="test")
 
 
 def get_user_info() -> (str, str):
-    # Warning: you can not push the user_info.json file to github
-    with open('user_info.json') as json_file:
-        data = json.load(json_file)
-        return data["username"], data["password"]
+    # require user's input
+    username = input("Please enter username for Kaggle: ")
+    password = input("Password: ")
+    return username, password
 
 
 if __name__ == "__main__":
     # Download and decompress data set
+    user_info = get_user_info()
 
     download(constants.train_data_name, constants.train_data_sample_submission + ".zip", constants.test_file_directory,
              constants.train_data_sample_submission)
