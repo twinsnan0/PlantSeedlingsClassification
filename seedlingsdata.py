@@ -78,6 +78,35 @@ class PreProcess(object):
                 print("Saved: ", output_file_name)
 
     @staticmethod
+    def remove_background(source_path: str, output_path: str):
+        """
+        Resize the background of images
+        :param source_path: source directory path
+        :param output_path: output directory path
+        :param resize_width: resize width
+        :param resize_height: resize height
+        :return:
+        """
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+
+        directories = os.listdir(source_path)
+        for directory in directories:
+            out_directory_path = os.path.join(output_path, directory)
+            if not os.path.exists(out_directory_path):
+                os.makedirs(out_directory_path)
+            for file in os.listdir(os.path.join(source_path, directory)):
+                # Resize
+                image = cv2.imread(os.path.join(source_path, directory, file))
+                removed = remove_background.remove_background(image)
+                last_index = file.rfind(".")
+                origin_name = file[0:last_index]
+                output_file_name = os.path.join(out_directory_path,
+                                                str(origin_name) + "_background_removed" + ".png")
+                cv2.imwrite(output_file_name, removed)
+                print("Saved: ", output_file_name)
+
+    @staticmethod
     def crop(source_path: str, output_path: str, crop_ratio=0.8, resize_width=WIDTH, resize_height=HEIGHT):
         """
         Crop the image then resize to the specified size
@@ -226,8 +255,7 @@ class SeedlingsData(object):
             batch_images = np.zeros((self.batch_size, c, w, h), dtype=np.float)
             for index, image in enumerate(batch_data):
                 image_rgb = cv2.cvtColor(cv2.imread(image[0]), cv2.COLOR_BGR2RGB)
-                image_remove_background = remove_background.remove_background(image_rgb)
-                batch_images[index] = (np.transpose(image_remove_background, (2, 0, 1)))
+                batch_images[index] = (np.transpose(image_rgb, (2, 0, 1)))
             batch_labels = np.array([image[1] for image in batch_data])
 
             yield batch_index, batch_images, batch_labels
@@ -243,8 +271,7 @@ class SeedlingsData(object):
             batch_images = np.zeros((self.batch_size, c, w, h), dtype=np.float)
             for index, image in enumerate(batch_data):
                 image_rgb = cv2.cvtColor(cv2.imread(image[0]), cv2.COLOR_BGR2RGB)
-                image_remove_background = remove_background.remove_background(image_rgb)
-                batch_images[index] = (np.transpose(image_remove_background, (2, 0, 1)))
+                batch_images[index] = (np.transpose(image_rgb, (2, 0, 1)))
             batch_labels = np.array([image[1] for image in batch_data])
 
             yield batch_index, batch_images, batch_labels
@@ -257,21 +284,25 @@ if __name__ == "__main__":
     # First we should pre-process the image data
     # Resize
     pre_process = PreProcess()
-    pre_process.resize(constants.test_file_path, constants.test_output_resize_file_path)
+    # pre_process.resize(constants.test_file_path, constants.test_output_resize_file_path)
 
     # Rotate
-    pre_process.rotate(constants.test_output_resize_file_path, constants.test_output_rotate_file_path)
+    # pre_process.rotate(constants.test_output_resize_file_path, constants.test_output_rotate_file_path)
 
     # Crop
-    pre_process.crop(constants.test_output_resize_file_path, constants.test_output_crop_file_path)
+    # pre_process.crop(constants.test_output_resize_file_path, constants.test_output_crop_file_path)
+
+    # Remove background
+    pre_process.remove_background(constants.test_output_resize_file_path,
+                                  constants.test_output_remove_background_file_path)
 
     # After pre-processing, we need to input data for training
-    data = SeedlingsData()
-    data.load([constants.test_output_resize_file_path, constants.test_output_rotate_file_path,
-               constants.test_output_crop_file_path])
+    # data = SeedlingsData()
+    # data.load([constants.test_output_resize_file_path, constants.test_output_rotate_file_path,
+    #            constants.test_output_crop_file_path])
 
     # Iterate method
-    for images, labels in data.generate_train_data():
-        print(type(images))
-        print(images.shape)
-        print(labels.shape)
+    # for images, labels in data.generate_train_data():
+    #     print(type(images))
+    #     print(images.shape)
+    #     print(labels.shape)
