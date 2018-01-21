@@ -25,7 +25,7 @@ def download(user_pwd, competition_name, data_file_name, directory=None, file_na
     else:
         downloader.download_dataset(data_file_name, directory)
 
-        downloader.decompress(download_file_path, file_path)
+    downloader.decompress(download_file_path, file_path)
 
 
 def get_user_info() -> (str, str):

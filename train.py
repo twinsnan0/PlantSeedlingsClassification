@@ -12,8 +12,8 @@ from seedlingsdata import SeedlingsData
 def train():
     data = SeedlingsData()
     data.load([constants.test_output_resize_file_path, constants.test_output_rotate_file_path,
-               constants.test_output_crop_file_path], validate=0.05)
-    data.set_batch_size(128)
+               constants.test_output_crop_file_path], validate=0.2)
+    data.set_batch_size(32)
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
