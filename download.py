@@ -5,6 +5,7 @@ from kaggle_data.downloader import KaggleDataDownloader
 
 import constants
 
+
 # To run this code please install the Kaggle-data-downloader
 # pip install -U git+https://github.com/EKami/kaggle-data-downloader.git
 
@@ -19,7 +20,6 @@ def download(competition_name, data_file_name, directory=None, file_name="test")
 
     # We can not download the data without user info
     username, password = get_user_info()
-    print("username:{}, password:{}".format(username, password))
     downloader = KaggleDataDownloader(username, password, competition_name)
 
     download_file_path = os.path.join(directory, data_file_name)
@@ -42,7 +42,10 @@ def get_user_info() -> (str, str):
 if __name__ == "__main__":
     # Download and decompress data set
 
-    download(constants.train_data_name, "sample_submission.csv.zip", r"../PlantSeedlingsImage/",
-             "sample_submission.csv")
-    download(constants.train_data_name, "test.zip", r"../PlantSeedlingsImage/", "test")
-    # download(constants.train_data_name, "train.zip", r"../PlantSeedlingsImage/", "train")
+    download(constants.train_data_name, constants.train_data_sample_submission + ".zip", constants.test_file_directory,
+             constants.train_data_sample_submission)
+    download(constants.train_data_name, constants.train_data_test, constants.test_file_directory,
+             constants.train_data_test)
+    download(constants.train_data_name, constants.train_data_train + ".zip", constants.test_file_directory,
+             constants.train_data_train)
+

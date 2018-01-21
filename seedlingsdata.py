@@ -267,12 +267,6 @@ if __name__ == "__main__":
     data.load([constants.test_output_resize_file_path, constants.test_output_rotate_file_path,
                constants.test_output_crop_file_path])
 
-    print(len(data.train_data))
-    print((data.train_data[0]))
-
-    print(len(data.validate_data))
-    print((data.validate_data[0]))
-
     # Iterate method
     for images, labels in data.generate_train_data():
         print(type(images))
