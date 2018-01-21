@@ -9,6 +9,7 @@ LEAF_COLOR_SIGMA = [[146.4852, 146.0210, 34.7797],
                     [34.7797, 30.7043, 143.9793]]
 THRESHOLD = 0.00000005
 
+
 def remove_background(image):
     # probability of each pixel being on the plant
     # based on multivariate normal distribution

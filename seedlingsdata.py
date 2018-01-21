@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 
 import constants
+import remove_background
 
 WIDTH = 224
 HEIGHT = 224
@@ -225,7 +226,8 @@ class SeedlingsData(object):
             batch_images = np.zeros((self.batch_size, c, w, h), dtype=np.float)
             for index, image in enumerate(batch_data):
                 image_rgb = cv2.cvtColor(cv2.imread(image[0]), cv2.COLOR_BGR2RGB)
-                batch_images[index] = (np.transpose(image_rgb, (2, 0, 1)))
+                image_remove_background = remove_background.remove_background(image_rgb)
+                batch_images[index] = (np.transpose(image_remove_background, (2, 0, 1)))
             batch_labels = np.array([image[1] for image in batch_data])
 
             yield batch_index, batch_images, batch_labels
@@ -241,7 +243,8 @@ class SeedlingsData(object):
             batch_images = np.zeros((self.batch_size, c, w, h), dtype=np.float)
             for index, image in enumerate(batch_data):
                 image_rgb = cv2.cvtColor(cv2.imread(image[0]), cv2.COLOR_BGR2RGB)
-                batch_images[index] = (np.transpose(image_rgb, (2, 0, 1)))
+                image_remove_background = remove_background.remove_background(image_rgb)
+                batch_images[index] = (np.transpose(image_remove_background, (2, 0, 1)))
             batch_labels = np.array([image[1] for image in batch_data])
 
             yield batch_index, batch_images, batch_labels

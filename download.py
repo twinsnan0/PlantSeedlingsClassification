@@ -3,10 +3,11 @@ from kaggle_data.downloader import KaggleDataDownloader
 
 import constants
 
+
 # To run this code please install the Kaggle-data-downloader
 # pip install -U git+https://github.com/EKami/kaggle-data-downloader.git
 
-def download(user_pwd,competition_name, data_file_name, directory=None, file_name="test"):
+def download(user_pwd, competition_name, data_file_name, directory=None, file_name=""):
     if directory is None:
         directory = os.getcwd()
 
@@ -38,10 +39,10 @@ if __name__ == "__main__":
     # Download and decompress data set
     user_info = get_user_info()
 
-    download(constants.train_data_name, constants.train_data_sample_submission + ".zip", constants.test_file_directory,
+    download(user_info, constants.train_data_name, constants.train_data_sample_submission + ".zip",
+             constants.test_file_directory,
              constants.train_data_sample_submission)
-    download(constants.train_data_name, constants.train_data_test, constants.test_file_directory,
+    download(user_info, constants.train_data_name, constants.train_data_test + ".zip", constants.test_file_directory,
              constants.train_data_test)
-    download(constants.train_data_name, constants.train_data_train + ".zip", constants.test_file_directory,
+    download(user_info, constants.train_data_name, constants.train_data_train + ".zip", constants.test_file_directory,
              constants.train_data_train)
-
