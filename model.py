@@ -10,6 +10,8 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.resnet50 = models.resnet50(pretrained=True)
         self.resnet50.fc = nn.Linear(2048, SPECIES_SIZE)
+        for param in self.resnet50.parameters():
+            param.requires_grad = True
 
     def forward(self, x):
         x = self.resnet50(x)

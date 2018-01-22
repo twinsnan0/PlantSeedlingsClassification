@@ -13,7 +13,7 @@ def train():
     data = SeedlingsData()
     data.load([constants.test_output_resize_file_path, constants.test_output_rotate_file_path,
                constants.test_output_crop_file_path], validate=0.2)
-    data.set_batch_size(32)
+    data.set_batch_size(128)
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -34,8 +34,10 @@ def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms
         batch_y = Variable(torch.from_numpy(labels)).cuda().long()
 
         output = net(batch_x)
-
-        optimizer = optim.Adam(net.parameters())
+        if batch_index <= 5:
+            optimizer = optim.Adam(net.parameters(), lr=0.0001)
+        if batch_index > 5:
+            optimizer = optim.Adam(net.parameters(), lr=0.00001)
         optimizer.zero_grad()
         criterion = nn.CrossEntropyLoss()
         loss = criterion(output, batch_y)
