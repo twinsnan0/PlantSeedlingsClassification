@@ -98,6 +98,7 @@ class PreProcess(object):
             for file in os.listdir(os.path.join(source_path, directory)):
                 # Resize
                 image = cv2.imread(os.path.join(source_path, directory, file))
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 removed = remove_background.remove_background(image)
                 last_index = file.rfind(".")
                 origin_name = file[0:last_index]
