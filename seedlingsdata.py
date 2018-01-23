@@ -309,22 +309,13 @@ class SeedlingsData(object):
             batch_index += 1
 
     def generate_test_data(self):
-        current_index = 0
-        batch_index = 0
-
-        while current_index + self.batch_size < self.test_size:
-            batch_data = self._test_data[current_index: current_index + self.batch_size]
-            h, w, c = cv2.imread(batch_data[0][0]).shape[:]
-            batch_images = np.zeros((self.batch_size, c, w, h), dtype=np.float)
-            for index, image in enumerate(batch_data):
-                image_rgb = cv2.cvtColor(cv2.imread(image[0]), cv2.COLOR_BGR2RGB)
-                batch_images[index] = (np.transpose(image_rgb, (2, 0, 1)))
-            batch_labels = np.array([image[1] for image in batch_data])
-
-            yield batch_index, batch_images, batch_labels
-            current_index += self.batch_size
-            batch_index += 1
-
+        for i in range(0, self.test_size):
+            image_dir = self._test_data[i][0]
+            h, w, c = cv2.imread(image_dir).shape[:]
+            image_4d = np.zeros((1, c, w, h), dtype=np.float)
+            image = cv2.cvtColor(cv2.imread(image_dir), cv2.COLOR_BGR2RGB)
+            image_4d[0] = np.transpose(image, (2, 0, 1))
+            yield image_dir, image_4d
 
 if __name__ == "__main__":
     # Replace with your directory

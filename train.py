@@ -53,16 +53,23 @@ def test(model_path: str = None):
     print(net)
 
     load_model(net, model_path)
+    create_submission_file("submission.txt")
 
-    for validate_batch_index, validate_images, validate_labels in data.generate_test_data():
-        validate_tensor = normalize(torch.from_numpy(validate_images))
-        validate_batch_x = Variable(validate_tensor).cuda().float()
-        validate_output = net(validate_batch_x)
-        _, predict_batch_y = torch.max(validate_output, 1)
-        print("Predict result:")
-        print(predict_batch_y)
-        # todo：Save as the form kaggle required
+    with open("submission.txt", "a") as submission_file:
+        for test_image_dir, test_image in data.generate_test_data():
+            test_tensor = normalize(torch.from_numpy(test_image))
+            test_x = Variable(test_tensor).cuda().float()
+            test_output = net(test_x)
+            _, predict_y = torch.max(test_output, 1)
+            print("Predict result:")
+            print(predict_y)
+            submission_file.write("{},{}\r\n".format(os.path.split(test_image_dir)[1], SeedlingsData.seedlings_labels[predict_y.item(0)]))
 
+def create_submission_file(filename):
+    # Overwrites the existing file if the file exists
+    # If the file does not exist, creates a new file for reading and writing
+    file = open("filename", "w+")
+    file.write("file,species\r\n")
 
 def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize):
     for batch_index, images, labels in data.generate_train_data():
