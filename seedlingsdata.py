@@ -83,8 +83,6 @@ class PreProcess(object):
         Resize the background of images
         :param source_path: source directory path
         :param output_path: output directory path
-        :param resize_width: resize width
-        :param resize_height: resize height
         :return:
         """
         if not os.path.exists(output_path):
@@ -98,7 +96,8 @@ class PreProcess(object):
             for file in os.listdir(os.path.join(source_path, directory)):
                 # Resize
                 image = cv2.imread(os.path.join(source_path, directory, file))
-                removed = remove_background.remove_background(image)
+                image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                removed = remove_background.remove_background(image_rgb)
                 last_index = file.rfind(".")
                 origin_name = file[0:last_index]
                 output_file_name = os.path.join(out_directory_path,
