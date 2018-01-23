@@ -1,3 +1,6 @@
+import os
+import time
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -8,12 +11,15 @@ import constants
 from model import Net
 from seedlingsdata import SeedlingsData
 
+accuracy_list = [0.0]
 
-def train():
+
+def train(save_directory: str, model_path: str = None):
     data = SeedlingsData()
-    data.load([constants.test_output_resize_file_path, constants.test_output_rotate_file_path,
-               constants.test_output_crop_file_path], validate=0.2)
-    data.set_batch_size(128)
+    data.load(train_data_paths=[constants.train_output_resize_file_path, constants.train_output_rotate_file_path,
+                                constants.train_output_crop_file_path],
+              test_data_paths=[], validate=0.2)
+    data.set_batch_size(64)
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -22,9 +28,40 @@ def train():
     net.cuda()
     print(net)
 
+    if model_path is not None:
+        load_model(net, model_path)
+
     for epoch in range(0, 50):
         train_epoch(net, data, epoch, normalize)
-        validate_epoch(net, data, epoch, normalize)
+        accuracy = validate_epoch(net, data, epoch, normalize)
+        accuracy_list.append(accuracy)
+        save_model(net, save_directory, accuracy=accuracy)
+        if accuracy_list.index(max(accuracy_list)) == len(accuracy_list) - 1:
+            save_model(net, save_directory, is_best=True)
+
+
+def test(model_path: str = None):
+    data = SeedlingsData()
+    data.load(train_data_paths=[], test_data_paths=[constants.test_output_resize_file_path])
+    data.set_batch_size(32)
+
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+    # Create network
+    net = Net()
+    net.cuda()
+    print(net)
+
+    load_model(net, model_path)
+
+    for validate_batch_index, validate_images, validate_labels in data.generate_test_data():
+        validate_tensor = normalize(torch.from_numpy(validate_images))
+        validate_batch_x = Variable(validate_tensor).cuda().float()
+        validate_output = net(validate_batch_x)
+        _, predict_batch_y = torch.max(validate_output, 1)
+        print("Predict result:")
+        print(predict_batch_y)
+        # todo：Save as the form kaggle required
 
 
 def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize):
@@ -65,9 +102,30 @@ def validate_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transfo
                                                                                accuracy))
 
     accuracy = validate_right / float(validate_total)
-    print("Epoch:{}, validate accuracy: %.4f".format(epoch, accuracy))
+    print("Epoch:{}, validate accuracy: {}".format(epoch, accuracy))
+    return accuracy
+
+
+def save_model(net: Net, save_directory, accuracy=0.0, is_best=False):
+    if not os.path.exists(save_directory):
+        os.mkdir(save_directory)
+    if not is_best:
+        current_time = time.strftime("%Y%m%d_%H%M", time.localtime())
+        file_name = current_time + "_" + str(accuracy) + ".pkl"
+        file_path = os.path.join(save_directory, file_name)
+        torch.save(net.state_dict(), file_path)
+    else:
+        file_path = os.path.join(constants.save_file_directory, "best.pkl")
+        torch.save(net.state_dict(), file_path)
+
+
+def load_model(net: Net, path: str):
+    net.load_state_dict(torch.load(path))
 
 
 if __name__ == "__main__":
     # Train network
-    train()
+    train(constants.save_file_directory)
+    # Test
+    best_model_path = os.path.join(constants.save_file_directory, "best.pkl")
+    test(best_model_path)

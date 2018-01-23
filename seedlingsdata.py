@@ -62,17 +62,27 @@ class PreProcess(object):
             os.makedirs(output_path)
 
         directories = os.listdir(source_path)
-        for directory in directories:
-            out_directory_path = os.path.join(output_path, directory)
-            if not os.path.exists(out_directory_path):
-                os.makedirs(out_directory_path)
-            for file in os.listdir(os.path.join(source_path, directory)):
-                # Resize
-                image = cv2.imread(os.path.join(source_path, directory, file))
+        for directory_or_file in directories:
+            if os.path.isdir(os.path.join(source_path, directory_or_file)):
+                out_directory_path = os.path.join(output_path, directory_or_file)
+                if not os.path.exists(out_directory_path):
+                    os.makedirs(out_directory_path)
+                for file in os.listdir(os.path.join(source_path, directory_or_file)):
+                    # Resize
+                    image = cv2.imread(os.path.join(source_path, directory_or_file, file))
+                    resized = PreProcess._resize(image, resize_width, resize_height)
+                    last_index = file.rfind(".")
+                    origin_name = file[0:last_index]
+                    output_file_name = os.path.join(out_directory_path,
+                                                    str(origin_name) + "_resize_" + str(resize_width) + ".png")
+                    cv2.imwrite(output_file_name, resized)
+                    print("Saved: ", output_file_name)
+            else:
+                image = cv2.imread(os.path.join(source_path, directory_or_file))
                 resized = PreProcess._resize(image, resize_width, resize_height)
-                last_index = file.rfind(".")
-                origin_name = file[0:last_index]
-                output_file_name = os.path.join(out_directory_path,
+                last_index = directory_or_file.rfind(".")
+                origin_name = directory_or_file[0:last_index]
+                output_file_name = os.path.join(output_path,
                                                 str(origin_name) + "_resize_" + str(resize_width) + ".png")
                 cv2.imwrite(output_file_name, resized)
                 print("Saved: ", output_file_name)
@@ -173,61 +183,77 @@ class PreProcess(object):
 
 
 class SeedlingsData(object):
+    seedlings_labels = ["Black-grass", "Charlock", "Cleavers", "Common Chickweed", "Common wheat",
+                        "Fat Hen", "Loose Silky-bent", "Maize", "Scentless Mayweed",
+                        "Shepherds Purse", "Small-flowered Cranesbill", "Sugar beet"]
 
     def __init__(self):
-        self.paths = []
         self.labels = {}
-        self._data = []
+        # Train
+        self.train_paths = []
+        self._train_data = []
+        # Test
+        self.test_paths = []
+        self._test_data = []
+
         self.batch_size = 128
         self.validate = 0.0
+
         self.train_size = 0
         self.validate_size = 0
+        self.test_size = 0
 
-        seedlings_labels = ["Black-grass", "Charlock", "Cleavers", "Common Chickweed", "Common wheat",
-                            "Fat Hen", "Loose Silky-bent", "Maize", "Scentless Mayweed",
-                            "Shepherds Purse", "Small-flowered Cranesbill", "Sugar beet"]
-
-        for index, label in enumerate(seedlings_labels):
+        for index, label in enumerate(SeedlingsData.seedlings_labels):
             self.labels[label] = index
 
-    def load(self, train_data_paths: list, train=True, shuffle=True, validate=0.2):
+    def load(self, train_data_paths: list, test_data_paths: list, shuffle=True, validate=0.2):
 
         """
         Load data and save in a list like this:
         the element's list contains two string,one is the file path of an image, one is the class of the image.
         [['D:\\Project\\Space\\Python\\Data\\seedings_data\\train\\train\\Black-grass\\0050f38b3.png', 'Black-grass']]
-        :param train_data_paths: path of the data
-        :param train: whether is the train data
+        :param train_data_paths: paths of the train data
+        :param test_data_paths: paths of the test data
         :param shuffle: should shuffle
         :param validate: validation ratio
         :return:
         """
-        self._data.clear()
-        self.paths = train_data_paths
+        self._train_data.clear()
+        self.train_paths = train_data_paths
         self.validate = validate
 
-        if train:
-            for data_path in train_data_paths:
-                directories = os.listdir(data_path)
-                for directory in directories:
-                    for root, dirs, files in os.walk(os.path.join(data_path, directory)):
-                        for file in files:
-                            # Save file path and class
-                            self._data.append([os.path.join(root, file), self.labels[directory]])
-        else:
-            for data_path in train_data_paths:
-                for root, dirs, files in os.walk(os.path.join(data_path, data_path)):
-                    for file in files:
-                        # Save file path and undefined class
-                        self._data.append([os.path.join(root, file), None])
-        if shuffle:
-            random.shuffle(self._data)
+        self._test_data.clear()
+        self.test_paths = test_data_paths
 
-        self.train_size = int(len(self._data) * (1 - self.validate))
-        self.validate_size = int(len(self._data) * self.validate)
+        for test_path in train_data_paths:
+            directories = os.listdir(test_path)
+            for directory in directories:
+                for root, dirs, files in os.walk(os.path.join(test_path, directory)):
+                    for file in files:
+                        # Save file path and class
+                        self._train_data.append([os.path.join(root, file), self.labels[directory]])
+
+        if shuffle:
+            random.shuffle(self._train_data)
+
+        self.train_size = int(len(self._train_data) * (1 - self.validate))
+        self.validate_size = int(len(self._train_data) * self.validate)
 
         print("train_size:{}".format(self.train_size))
         print("validate_size:{}".format(self.validate_size))
+
+        for test_path in test_data_paths:
+            for root, dirs, files in os.walk(os.path.join(test_path)):
+                for file in files:
+                    # Save file path and undefined class
+                    self._test_data.append([os.path.join(root, file), ""])
+
+        if shuffle:
+            random.shuffle(self._test_data)
+
+        self.test_size = int(len(self.test_data))
+
+        print("test_size:{}".format(self.test_size))
 
     def set_batch_size(self, size):
         """
@@ -239,17 +265,38 @@ class SeedlingsData(object):
 
     @property
     def train_data(self) -> list:
-        return self._data[:self.train_size]
+        return self._train_data[:self.train_size]
 
     @property
     def validate_data(self) -> list:
-        return self._data[self.train_size:]
+        return self._train_data[self.train_size:]
+
+    @property
+    def test_data(self) -> list:
+        return self._test_data[:]
 
     def generate_train_data(self):
         current_index = 0
         batch_index = 0
         while current_index + self.batch_size < self.train_size:
-            batch_data = self._data[current_index: current_index + self.batch_size]
+            batch_data = self._train_data[current_index: current_index + self.batch_size]
+            h, w, c = cv2.imread(batch_data[0][0]).shape[:]
+            batch_images = np.zeros((self.batch_size, c, w, h), dtype=np.float)
+            for index, image in enumerate(batch_data):
+                image_rgb = cv2.cvtColor(cv2.imread(image[0]), cv2.COLOR_BGR2RGB)
+                image_rgb = remove_background.remove_background(image_rgb)
+                batch_images[index] = (np.transpose(image_rgb, (2, 0, 1)))
+            batch_labels = np.array([image[1] for image in batch_data])
+
+            yield batch_index, batch_images, batch_labels
+            current_index += self.batch_size
+            batch_index += 1
+
+    def generate_validate_data(self):
+        current_index = self.train_size
+        batch_index = 0
+        while current_index + self.batch_size < len(self._train_data):
+            batch_data = self._train_data[current_index: current_index + self.batch_size]
             h, w, c = cv2.imread(batch_data[0][0]).shape[:]
             batch_images = np.zeros((self.batch_size, c, w, h), dtype=np.float)
             for index, image in enumerate(batch_data):
@@ -261,11 +308,12 @@ class SeedlingsData(object):
             current_index += self.batch_size
             batch_index += 1
 
-    def generate_validate_data(self):
-        current_index = self.train_size
+    def generate_test_data(self):
+        current_index = 0
         batch_index = 0
-        while current_index + self.batch_size < len(self._data):
-            batch_data = self._data[current_index: current_index + self.batch_size]
+
+        while current_index + self.batch_size < self.test_size:
+            batch_data = self._test_data[current_index: current_index + self.batch_size]
             h, w, c = cv2.imread(batch_data[0][0]).shape[:]
             batch_images = np.zeros((self.batch_size, c, w, h), dtype=np.float)
             for index, image in enumerate(batch_data):
@@ -292,16 +340,24 @@ if __name__ == "__main__":
     # pre_process.crop(constants.test_output_resize_file_path, constants.test_output_crop_file_path)
 
     # Remove background
-    pre_process.remove_background(constants.test_output_resize_file_path,
-                                  constants.test_output_remove_background_file_path)
+    # pre_process.remove_background(constants.train_output_resize_file_path,
+    #                               constants.train_output_remove_background_file_path)
+
+    # Resize test data
+    # pre_process.resize(constants.test_file_path, constants.test_output_resize_file_path)
 
     # After pre-processing, we need to input data for training
-    # data = SeedlingsData()
-    # data.load([constants.test_output_resize_file_path, constants.test_output_rotate_file_path,
-    #            constants.test_output_crop_file_path])
+    data = SeedlingsData()
+    data.load([constants.train_output_resize_file_path, constants.train_output_rotate_file_path,
+               constants.train_output_crop_file_path], [constants.test_output_resize_file_path])
 
     # Iterate method
     # for images, labels in data.generate_train_data():
     #     print(type(images))
     #     print(images.shape)
     #     print(labels.shape)
+
+    for index, images, labels in data.generate_test_data():
+        print(type(images))
+        print(images.shape)
+        print(labels.shape)

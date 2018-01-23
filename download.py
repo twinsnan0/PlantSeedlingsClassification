@@ -40,9 +40,9 @@ if __name__ == "__main__":
     user_info = get_user_info()
 
     download(user_info, constants.train_data_name, constants.train_data_sample_submission + ".zip",
-             constants.test_file_directory,
+             constants.data_file_directory,
              constants.train_data_sample_submission)
-    download(user_info, constants.train_data_name, constants.train_data_test + ".zip", constants.test_file_directory,
+    download(user_info, constants.train_data_name, constants.train_data_test + ".zip", constants.data_file_directory,
              constants.train_data_test)
-    download(user_info, constants.train_data_name, constants.train_data_train + ".zip", constants.test_file_directory,
+    download(user_info, constants.train_data_name, constants.train_data_train + ".zip", constants.data_file_directory,
              constants.train_data_train)
