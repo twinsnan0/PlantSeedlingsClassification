@@ -248,10 +248,7 @@ class SeedlingsData(object):
                     # Save file path and undefined class
                     self._test_data.append([os.path.join(root, file), ""])
 
-        if shuffle:
-            random.shuffle(self._test_data)
-
-        self.test_size = int(len(self.test_data))
+        self.test_size = int(len(self._test_data))
 
         print("test_size:{}".format(self.test_size))
 
@@ -322,13 +319,13 @@ if __name__ == "__main__":
     # First we should pre-process the image data
     # Resize
     pre_process = PreProcess()
-    # pre_process.resize(constants.test_file_path, constants.test_output_resize_file_path)
+    # pre_process.resize(constants.train_file_path, constants.train_output_resize_file_path)
 
     # Rotate
-    # pre_process.rotate(constants.test_output_resize_file_path, constants.test_output_rotate_file_path)
+    # pre_process.rotate(constants.train_output_resize_file_path, constants.train_output_rotate_file_path)
 
     # Crop
-    # pre_process.crop(constants.test_output_resize_file_path, constants.test_output_crop_file_path)
+    # pre_process.crop(constants.train_output_resize_file_path, constants.train_output_crop_file_path)
 
     # Remove background
     # pre_process.remove_background(constants.train_output_resize_file_path,

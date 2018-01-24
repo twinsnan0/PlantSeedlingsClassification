@@ -18,7 +18,7 @@ def train(save_directory: str, model_path: str = None):
     data = SeedlingsData()
     data.load(train_data_paths=[constants.train_output_resize_file_path, constants.train_output_rotate_file_path,
                                 constants.train_output_crop_file_path],
-              test_data_paths=[], validate=0.2)
+              test_data_paths=[constants.test_output_resize_file_path], validate=0.2)
     data.set_batch_size(64)
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -31,7 +31,7 @@ def train(save_directory: str, model_path: str = None):
     if model_path is not None:
         load_model(net, model_path)
 
-    for epoch in range(0, 50):
+    for epoch in range(0, 0):
         train_epoch(net, data, epoch, normalize)
         accuracy = validate_epoch(net, data, epoch, normalize)
         accuracy_list.append(accuracy)
@@ -63,13 +63,18 @@ def test(model_path: str = None):
             _, predict_y = torch.max(test_output, 1)
             print("Predict result:")
             print(predict_y)
-            submission_file.write("{},{}\r\n".format(os.path.split(test_image_dir)[1], SeedlingsData.seedlings_labels[predict_y.item(0)]))
+            file_name = os.path.split(test_image_dir)[1].split("_")[0]
+            string_to_write = "{},{}\r\n".format(file_name, SeedlingsData.seedlings_labels[predict_y.item(0)])
+            submission_file.write(string_to_write)
+            print(string_to_write)
+
 
 def create_submission_file(filename):
     # Overwrites the existing file if the file exists
     # If the file does not exist, creates a new file for reading and writing
-    file = open("filename", "w+")
+    file = open(filename, "w+")
     file.write("file,species\r\n")
+
 
 def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize):
     for batch_index, images, labels in data.generate_train_data():
