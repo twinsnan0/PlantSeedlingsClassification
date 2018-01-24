@@ -281,7 +281,7 @@ class SeedlingsData(object):
             batch_images = np.zeros((self.batch_size, c, w, h), dtype=np.float)
             for index, image in enumerate(batch_data):
                 image_rgb = cv2.cvtColor(cv2.imread(image[0]), cv2.COLOR_BGR2RGB)
-                image_rgb = remove_background.remove_background(image_rgb)
+                # image_rgb = remove_background.remove_background(image_rgb)
                 batch_images[index] = (np.transpose(image_rgb, (2, 0, 1)))
             batch_labels = np.array([image[1] for image in batch_data])
 
