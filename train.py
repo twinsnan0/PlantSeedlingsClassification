@@ -63,8 +63,8 @@ def test(model_path: str = None):
             _, predict_y = torch.max(test_output, 1)
             print("Predict result:")
             print(predict_y)
-            file_name = os.path.split(test_image_dir)[1].split("_")[0]
-            string_to_write = "{},{}\r\n".format(file_name, SeedlingsData.seedlings_labels[predict_y.item(0)])
+            file_name = os.path.split(test_image_dir)[1].split("_")[0]+'.'+os.path.split(test_image_dir)[1].split('.')[1]
+            string_to_write = "{},{}\r\n".format(file_name, SeedlingsData.seedlings_labels[predict_y.data[0]])
             submission_file.write(string_to_write)
             print(string_to_write)
 
