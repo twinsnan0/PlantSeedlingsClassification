@@ -23,13 +23,14 @@ def train(save_directory: str, model_path: str = None):
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
-    # Create network
-    net = Net()
-    net.cuda()
-    print(net)
-
     if model_path is not None:
-        load_model(net, model_path)
+        net = load_model(model_path)
+    else:
+        # Create network
+        net = Net()
+        print(net)
+
+    net.cuda()
 
     for epoch in range(0, 1):
         train_epoch(net, data, epoch, normalize)
@@ -49,12 +50,10 @@ def test(model_path: str = None):
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
-    # Create network
-    net = Net()
+    # Load network
+    net = load_model(model_path)
     net.cuda()
-    print(net)
 
-    load_model(net, model_path)
     create_submission_file("submission.txt")
 
     with open("submission.txt", "a") as submission_file:
@@ -131,14 +130,14 @@ def save_model(net: Net, save_directory, accuracy=0.0, is_best=False):
         current_time = time.strftime("%Y%m%d_%H%M", time.localtime())
         file_name = current_time + "_" + str(accuracy) + ".pkl"
         file_path = os.path.join(save_directory, file_name)
-        torch.save(net.state_dict(), file_path)
+        torch.save(net, file_path)
     else:
         file_path = os.path.join(constants.save_file_directory, "best.pkl")
-        torch.save(net.state_dict(), file_path)
+        torch.save(net, file_path)
 
 
-def load_model(net: Net, path: str):
-    net.load_state_dict(torch.load(path))
+def load_model(path: str):
+    return torch.load(path)
 
 
 if __name__ == "__main__":
