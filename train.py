@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
+from torch.optim import Optimizer
 from torchvision import transforms
 
 import constants
@@ -33,10 +34,12 @@ def train(save_directory: str, model_path: str = None, epochs=20):
 
     net.cuda()
 
+    optimizer = optim.Adam(net.parameters(), lr=0.00001)
+
     for epoch in range(0, epochs):
         # Shuffle again
         data.shuffle()
-        train_epoch(net, data, epoch, normalize)
+        train_epoch(net, data, epoch, normalize, optimizer)
         accuracy = validate_epoch(net, data, epoch, normalize)
         accuracy_list.append(accuracy)
         save_model(net, save_directory, accuracy=accuracy)
@@ -83,17 +86,14 @@ def create_submission_file(filename):
     file.write("file,species\r\n")
 
 
-def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize):
+def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize, optimizer: Optimizer):
     for batch_index, images, labels in data.generate_train_data():
         tensor = normalize(torch.from_numpy(images))
         batch_x = Variable(tensor).cuda().float()
         batch_y = Variable(torch.from_numpy(labels)).cuda().long()
 
         output = net(batch_x)
-        if batch_index <= 5:
-            optimizer = optim.Adam(net.parameters(), lr=0.0001)
-        if batch_index > 5:
-            optimizer = optim.Adam(net.parameters(), lr=0.00001)
+
         optimizer.zero_grad()
         criterion = nn.CrossEntropyLoss()
         loss = criterion(output, batch_y)
