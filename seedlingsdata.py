@@ -260,6 +260,9 @@ class SeedlingsData(object):
         """
         self.batch_size = size
 
+    def shuffle(self):
+        random.shuffle(self._train_data)
+
     @property
     def train_data(self) -> list:
         return self._train_data[:self.train_size]

@@ -33,6 +33,8 @@ def train(save_directory: str, model_path: str = None):
     net.cuda()
 
     for epoch in range(0, 1):
+        # Shuffle again
+        data.shuffle()
         train_epoch(net, data, epoch, normalize)
         accuracy = validate_epoch(net, data, epoch, normalize)
         accuracy_list.append(accuracy)

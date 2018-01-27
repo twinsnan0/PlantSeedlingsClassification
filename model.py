@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torchvision.models as models
+import torch.nn.functional as F
 
 INPUT_CHANNELS = 3
 SPECIES_SIZE = 12
@@ -9,12 +10,16 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.resnet = models.resnet101(pretrained=True)
-        self.resnet.fc = nn.Linear(2048, SPECIES_SIZE)
+        self.resnet.fc = nn.Linear(2048, 1024)
         for param in self.resnet.parameters():
             param.requires_grad = True
+        self.fc1 = nn.Linear(1024, 120)
+        self.fc2 = nn.Linear(120, SPECIES_SIZE)
 
     def forward(self, x):
         x = self.resnet(x)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
         return x
 
 
