@@ -206,7 +206,7 @@ class SeedlingsData(object):
         for index, label in enumerate(SeedlingsData.seedlings_labels):
             self.labels[label] = index
 
-    def load(self, train_data_paths: list, test_data_paths: list, shuffle=True, validate=0.1):
+    def load(self, train_data_paths: list, test_data_paths: list, shuffle=True, validate=0.2):
 
         """
         Load data and save in a list like this:

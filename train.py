@@ -16,11 +16,11 @@ from seedlingsdata import SeedlingsData
 accuracy_list = [0.0]
 
 
-def train(save_directory: str, model_path: str = None, epochs=10):
+def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
     data = SeedlingsData()
     data.load(train_data_paths=[constants.train_output_resize_file_path, constants.train_output_rotate_file_path,
                                 constants.train_output_crop_file_path],
-              test_data_paths=[constants.test_output_resize_file_path], validate=0.1)
+              test_data_paths=[constants.test_output_resize_file_path], validate=validate)
     data.set_batch_size(64)
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -40,10 +40,13 @@ def train(save_directory: str, model_path: str = None, epochs=10):
         # Shuffle again
         # data.shuffle()
         train_epoch(net, data, epoch, normalize, optimizer)
-        accuracy = validate_epoch(net, data, epoch, normalize)
-        accuracy_list.append(accuracy)
-        save_model(net, save_directory, accuracy=accuracy)
-        if accuracy_list.index(max(accuracy_list)) == len(accuracy_list) - 1:
+        if data.validate >= 0.0001:
+            accuracy = validate_epoch(net, data, epoch, normalize)
+            accuracy_list.append(accuracy)
+            save_model(net, save_directory, accuracy=accuracy)
+            if accuracy_list.index(max(accuracy_list)) == len(accuracy_list) - 1:
+                save_model(net, save_directory, is_best=True)
+        else:
             save_model(net, save_directory, is_best=True)
 
     del net
