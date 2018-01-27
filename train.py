@@ -20,7 +20,7 @@ def train(save_directory: str, model_path: str = None, epochs=20):
     data = SeedlingsData()
     data.load(train_data_paths=[constants.train_output_resize_file_path, constants.train_output_rotate_file_path,
                                 constants.train_output_crop_file_path],
-              test_data_paths=[constants.test_output_resize_file_path], validate=0.2)
+              test_data_paths=[constants.test_output_resize_file_path], validate=0.15)
     data.set_batch_size(64)
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         print(net_path)
 
     # Train network
-    train(constants.save_file_directory, net_path)
+    train(constants.save_file_directory, net_path, epochs)
     # Test
     best_model_path = os.path.join(constants.save_file_directory, "best.pkl")
     test(best_model_path)
