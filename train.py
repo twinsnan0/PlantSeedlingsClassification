@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 
 import torch
@@ -14,7 +15,7 @@ from seedlingsdata import SeedlingsData
 accuracy_list = [0.0]
 
 
-def train(save_directory: str, model_path: str = None):
+def train(save_directory: str, model_path: str = None, epochs=20):
     data = SeedlingsData()
     data.load(train_data_paths=[constants.train_output_resize_file_path, constants.train_output_rotate_file_path,
                                 constants.train_output_crop_file_path],
@@ -32,7 +33,7 @@ def train(save_directory: str, model_path: str = None):
 
     net.cuda()
 
-    for epoch in range(0, 1):
+    for epoch in range(0, epochs):
         # Shuffle again
         data.shuffle()
         train_epoch(net, data, epoch, normalize)
@@ -143,8 +144,22 @@ def load_model(path: str):
 
 
 if __name__ == "__main__":
+    net_path = None
+    epochs = 20
+    if len(sys.argv) == 3:
+        net_path = sys.argv[1]
+        epochs = int(sys.argv[2])
+
+        print(net_path)
+        print(epochs)
+
+    if len(sys.argv) == 2:
+        net_path = sys.argv[1]
+
+        print(net_path)
+
     # Train network
-    train(constants.save_file_directory)
+    train(constants.save_file_directory, net_path)
     # Test
     best_model_path = os.path.join(constants.save_file_directory, "best.pkl")
     test(best_model_path)
