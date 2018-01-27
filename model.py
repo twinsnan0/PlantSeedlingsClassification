@@ -15,11 +15,11 @@ class Net(nn.Module):
             param.requires_grad = True
         self.fc1 = nn.Linear(1024, 120)
         self.fc2 = nn.Linear(120, SPECIES_SIZE)
-        self.dropout = nn.Dropout(p=0.2)
+        # self.dropout = nn.Dropout(p=0.2)
 
     def forward(self, x):
         x = self.resnet(x)
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
