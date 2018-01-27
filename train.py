@@ -8,6 +8,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.optim import Optimizer
 from torchvision import transforms
+import numpy as np
 
 import constants
 from model import Net
@@ -50,7 +51,7 @@ def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
                 save_model(net, save_directory, is_best=True)
         else:
             save_model(net, save_directory, is_best=True)
-
+        validate_analysis(net, data, normalize)
     del net
 
 
@@ -129,6 +130,23 @@ def validate_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transfo
     accuracy = validate_right / float(validate_total)
     print("Epoch:{}, validate accuracy: {}".format(epoch, accuracy))
     return accuracy
+
+
+def validate_analysis(net: Net, data: SeedlingsData, normalize: transforms.Normalize):
+    truth_pred=[]
+    data.set_batch_size(1)
+    for validate_batch_index, validate_images, validate_labels in data.generate_validate_data():
+        validate_tensor = normalize(torch.from_numpy(validate_images))
+        validate_batch_x = Variable(validate_tensor, volatile=True).cuda().float()
+        validate_batch_y = Variable(torch.from_numpy(validate_labels), volatile=True).cuda().long()
+        validate_output = net(validate_batch_x)
+        _, predict_batch_y = torch.max(validate_output, 1)
+        truth_pred.append([validate_batch_y.data[0], predict_batch_y.data[0]])
+        truth_pred = np.array(truth_pred)
+    for i in range(0, 12):
+        species_pred = truth_pred[truth_pred[:,0] == i]
+        acc = np.sum(species_pred[:,1] == 1) / species_pred.shape[0]
+        print("Species:{}, accuracy: {}".format(SeedlingsData.seedlings_labels[i], acc))
 
 
 def save_model(net: Net, save_directory, accuracy=0.0, is_best=False):
