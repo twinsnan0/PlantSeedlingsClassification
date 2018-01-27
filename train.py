@@ -29,7 +29,9 @@ def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
         net = load_model(model_path)
     else:
         # Create network
-        net = Net()
+        print("select model in ['resnet101', 'resnet152', 'densenet161', 'densenet201', 'inception_v3']")
+        model = input("model: ")
+        net = Net(model)
         print(net)
 
     net.cuda()
