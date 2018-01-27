@@ -206,7 +206,7 @@ class SeedlingsData(object):
         for index, label in enumerate(SeedlingsData.seedlings_labels):
             self.labels[label] = index
 
-    def load(self, train_data_paths: list, test_data_paths: list, shuffle=True, validate=0.2):
+    def load(self, train_data_paths: list, test_data_paths: list, shuffle=True, validate=0.1):
 
         """
         Load data and save in a list like this:
@@ -316,6 +316,7 @@ class SeedlingsData(object):
             image = cv2.cvtColor(cv2.imread(image_dir), cv2.COLOR_BGR2RGB)
             image_4d[0] = np.transpose(image, (2, 0, 1))
             yield image_dir, image_4d
+
 
 if __name__ == "__main__":
     # Replace with your directory

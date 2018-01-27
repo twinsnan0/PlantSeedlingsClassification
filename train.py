@@ -16,11 +16,11 @@ from seedlingsdata import SeedlingsData
 accuracy_list = [0.0]
 
 
-def train(save_directory: str, model_path: str = None, epochs=20):
+def train(save_directory: str, model_path: str = None, epochs=10):
     data = SeedlingsData()
     data.load(train_data_paths=[constants.train_output_resize_file_path, constants.train_output_rotate_file_path,
                                 constants.train_output_crop_file_path],
-              test_data_paths=[constants.test_output_resize_file_path], validate=0.15)
+              test_data_paths=[constants.test_output_resize_file_path], validate=0.1)
     data.set_batch_size(64)
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -38,7 +38,7 @@ def train(save_directory: str, model_path: str = None, epochs=20):
 
     for epoch in range(0, epochs):
         # Shuffle again
-        data.shuffle()
+        # data.shuffle()
         train_epoch(net, data, epoch, normalize, optimizer)
         accuracy = validate_epoch(net, data, epoch, normalize)
         accuracy_list.append(accuracy)
