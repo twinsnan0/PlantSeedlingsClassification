@@ -34,7 +34,7 @@ def train(save_directory: str, model_path: str = None, epochs=20):
 
     net.cuda()
 
-    optimizer = optim.Adam(net.parameters(), lr=0.00001)
+    optimizer = optim.Adam(net.parameters(), lr=0.00005)
 
     for epoch in range(0, epochs):
         # Shuffle again
