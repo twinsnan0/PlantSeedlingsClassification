@@ -167,12 +167,12 @@ def validate_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transfo
         validate_batch_y = Variable(torch.from_numpy(validate_labels), volatile=True).cuda().long()
 
         if net.model_name == 'resnet50+':
-            prob, mask, _ = remove_background(images)
+            prob, mask, _ = remove_background(validate_images)
             plant_area = np.sum(mask, (1, 2))
             avg_prob = np.divide(np.sum(prob * mask, (1, 2)), plant_area,
                                  out=np.zeros_like(plant_area).astype(np.float),
                                  where=plant_area != 0)
-            avg_green = np.divide(np.sum(images[:, 1, :, :] * mask, (1, 2)),
+            avg_green = np.divide(np.sum(validate_images[:, 1, :, :] * mask, (1, 2)),
                                   plant_area, out=np.zeros_like(plant_area).astype(np.float),
                                   where=plant_area != 0)
             plant_area = np.reshape(plant_area, (data.batch_size, 1))
@@ -211,12 +211,12 @@ def validate_analysis(net: Net, data: SeedlingsData, normalize: transforms.Norma
         validate_batch_y = Variable(torch.from_numpy(validate_labels), volatile=True).cuda().long()
 
         if net.model_name == 'resnet50+':
-            prob, mask, _ = remove_background(images)
+            prob, mask, _ = remove_background(validate_images)
             plant_area = np.sum(mask, (1, 2))
             avg_prob = np.divide(np.sum(prob * mask, (1, 2)), plant_area,
                                  out=np.zeros_like(plant_area).astype(np.float),
                                  where=plant_area != 0)
-            avg_green = np.divide(np.sum(images[:, 1, :, :] * mask, (1, 2)),
+            avg_green = np.divide(np.sum(validate_images[:, 1, :, :] * mask, (1, 2)),
                                   plant_area, out=np.zeros_like(plant_area).astype(np.float),
                                   where=plant_area != 0)
             plant_area = np.reshape(plant_area, (data.batch_size, 1))
