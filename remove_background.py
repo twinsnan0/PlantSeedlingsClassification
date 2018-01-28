@@ -13,6 +13,8 @@ THRESHOLD = 0.00000005
 def remove_background(images):
     # probability of each pixel being on the plant
     # based on multivariate normal distribution
+    if images.shape[1] == 3 and images.ndim == 4:
+        images = np.transpose(images, (0, 2, 3, 1))
     prob = multivariate_normal.pdf(images, mean=LEAF_COLOR_MU, cov=LEAF_COLOR_SIGMA)
     if prob.ndim == 2:
         prob = np.expand_dims(prob, axis=0)
