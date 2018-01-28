@@ -10,21 +10,23 @@ LEAF_COLOR_SIGMA = [[146.4852, 146.0210, 34.7797],
 THRESHOLD = 0.00000005
 
 
-def remove_background(image):
+def remove_background(images):
     # probability of each pixel being on the plant
     # based on multivariate normal distribution
-    prob = multivariate_normal.pdf(image, mean=LEAF_COLOR_MU, cov=LEAF_COLOR_SIGMA)
+    prob = multivariate_normal.pdf(images, mean=LEAF_COLOR_MU, cov=LEAF_COLOR_SIGMA)
+    if prob.ndim == 2:
+        prob = np.expand_dims(prob, axis=0)
     mask = prob > THRESHOLD
-    mask = np.repeat(np.expand_dims(mask, axis=2), 3, axis=2)
-    image = np.multiply(image, mask)
-    return image
+    mask_4d = np.expand_dims(mask, axis=3)
+    result_images = images * mask_4d
+    return prob, mask, result_images
 
 
 if __name__ == "__main__":
     img = cv2.imread('test.png')
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = remove_background(img)
-
+    _, _, img = remove_background(img)
+    img = np.squeeze(img)
     plt.imshow(img)
     plt.show()
 

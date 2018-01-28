@@ -12,6 +12,7 @@ from torchvision import transforms
 
 import constants
 from model import Net
+from remove_background import remove_background
 from seedlingsdata import SeedlingsData
 
 accuracy_list = [0.0]
@@ -99,7 +100,13 @@ def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms
         batch_x = Variable(tensor).cuda().float()
         batch_y = Variable(torch.from_numpy(labels)).cuda().long()
 
-        output = net(batch_x)
+        if net.model_name == 'resnet50_test':
+            prob, mask, _ = remove_background(images)
+            plant_area = np.sum(mask, (1, 2))
+            sum_prob = np.sum(prob, (1, 2))
+            output = net(batch_x, plant_area, sum_prob)
+        else:
+            output = net(batch_x)
 
         optimizer.zero_grad()
         criterion = nn.CrossEntropyLoss()
