@@ -31,7 +31,9 @@ class Net(nn.Module):
             self.model.fc = nn.Linear(2048, 1024)
 
         else:
-            print("wrong model, select 'resnet101', 'resnet152', 'densenet161', 'densenet201' or 'inception_v3'")
+            print(
+                "wrong model, select 'resnet50','resnet101', 'resnet152', 'densenet161', 'densenet201' or "
+                "'inception_v3'")
 
         for param in self.model.parameters():
             param.requires_grad = True

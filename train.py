@@ -2,13 +2,13 @@ import os
 import sys
 import time
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 from torch.optim import Optimizer
 from torchvision import transforms
-import numpy as np
 
 import constants
 from model import Net
@@ -17,9 +17,9 @@ from seedlingsdata import SeedlingsData
 accuracy_list = [0.0]
 
 
-def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
+def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2, model_2=False):
     data = SeedlingsData()
-    data.load(train_data_paths=[constants.train_output_resize_file_path, constants.train_output_rotate_file_path,constants.train_output_crop_file_path],
+    data.load(train_data_paths=[constants.train_output_resize_file_path],
               test_data_paths=[constants.test_output_resize_file_path], validate=validate)
     data.set_batch_size(128)
 
@@ -29,7 +29,7 @@ def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
         net = load_model(model_path)
     else:
         # Create network
-        print("select model in ['resnet101', 'resnet152', 'densenet161', 'densenet201', 'inception_v3']")
+        print("select model in ['resnet50','resnet101', 'resnet152', 'densenet161', 'densenet201', 'inception_v3']")
         model = input("model: ")
         net = Net(model)
         print(net)
@@ -38,27 +38,38 @@ def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
 
     optimizer = optim.Adam(net.parameters(), lr=0.00005)
 
-    for epoch in range(0, 10):
-        # Shuffle again
-        # data.shuffle()
-        train_epoch(net, data, epoch, normalize, optimizer)
-        if data.validate >= 0.0001:
-            accuracy = validate_epoch(net, data, epoch, normalize)
-            accuracy_list.append(accuracy)
-            save_model(net, save_directory, accuracy=accuracy)
-            if accuracy_list.index(max(accuracy_list)) == len(accuracy_list) - 1:
-                save_model(net, save_directory, is_best=True)
-                
-            validate_analysis(net, data, normalize)
-        else:
-            save_model(net, save_directory, is_best=True)
+    if not model_2:
+        for epoch in range(0, epochs):
+            train_epoch(net, data, epoch, normalize, optimizer, model_2)
+            if data.validate >= 0.0001:
+                accuracy = validate_epoch(net, data, epoch, normalize, model_2)
+                accuracy_list.append(accuracy)
+                save_model(net, save_directory, accuracy=accuracy, prefix='model1')
+                if accuracy_list.index(max(accuracy_list)) == len(accuracy_list) - 1:
+                    save_model(net, save_directory, is_best=True, prefix='model1')
+
+                validate_analysis(net, data, normalize, model_2)
+            else:
+                save_model(net, save_directory, is_best=True, prefix='model1')
+    else:
+        for epoch in range(0, epochs):
+            train_epoch(net, data, epoch, normalize, optimizer, model_2)
+            if data.validate >= 0.0001:
+                accuracy = validate_epoch(net, data, epoch, normalize, model_2)
+                accuracy_list.append(accuracy)
+                save_model(net, save_directory, accuracy=accuracy, prefix='model2')
+                if accuracy_list.index(max(accuracy_list)) == len(accuracy_list) - 1:
+                    save_model(net, save_directory, is_best=True, prefix='model2')
+
+                validate_analysis(net, data, normalize, model_2)
+            else:
+                save_model(net, save_directory, is_best=True, prefix='model2')
     del net
 
 
 def test(model_path: str = None):
     data = SeedlingsData()
     data.load(train_data_paths=[], test_data_paths=[constants.test_output_resize_file_path])
-    data.set_batch_size(32)
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -92,74 +103,135 @@ def create_submission_file(filename):
     file.write("file,species\r\n")
 
 
-def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize, optimizer: Optimizer):
-    for batch_index, images, labels in data.generate_train_data():
-        tensor = normalize(torch.from_numpy(images))
-        batch_x = Variable(tensor).cuda().float()
-        batch_y = Variable(torch.from_numpy(labels)).cuda().long()
+def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize, optimizer: Optimizer,
+                model_2=False):
+    losses = []
+    if not model_2:
+        for batch_index, images, labels in data.generate_train_data():
+            tensor = normalize(torch.from_numpy(images))
+            batch_x = Variable(tensor).cuda().float()
+            batch_y = Variable(torch.from_numpy(labels)).cuda().long()
 
-        output = net(batch_x)
+            output = net(batch_x)
 
-        optimizer.zero_grad()
-        criterion = nn.CrossEntropyLoss()
-        loss = criterion(output, batch_y)
-        loss.backward()
-        optimizer.step()
-        print("epoch:{} ,batch index:{}, loss:{}".format(epoch, batch_index, loss.data[0]))
-        # Validate
-        if batch_index != 0 and batch_index % 100 == 0:
-            pass
+            optimizer.zero_grad()
+            criterion = nn.CrossEntropyLoss()
+            loss = criterion(output, batch_y)
+            loss.backward()
+            optimizer.step()
+            losses.append(loss.data[0])
+            print("epoch:{}, batch index:{}, loss:{}".format(epoch, batch_index, loss.data[0]))
+            # Validate
+            if batch_index != 0 and batch_index % 100 == 0:
+                pass
+    else:
+        for batch_index, images, labels in data.generate_train_data_model_2():
+            tensor = normalize(torch.from_numpy(images))
+            batch_x = Variable(tensor).cuda().float()
+            batch_y = Variable(torch.from_numpy(labels)).cuda().long()
+
+            output = net(batch_x)
+
+            optimizer.zero_grad()
+            criterion = nn.CrossEntropyLoss()
+            loss = criterion(output, batch_y)
+            loss.backward()
+            optimizer.step()
+            losses.append(loss.data[0])
+            print("epoch:{}, batch index:{}, loss:{}".format(epoch, batch_index, loss.data[0]))
+            # Validate
+            if batch_index != 0 and batch_index % 100 == 0:
+                pass
+
+    print("epoch:{}, average train loss:{}".format(epoch, sum(losses) / len(losses)))
 
 
-def validate_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize):
+def validate_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize, model_2=False):
     validate_total = 0
     validate_right = 0
-    for validate_batch_index, validate_images, validate_labels in data.generate_validate_data():
-        validate_tensor = normalize(torch.from_numpy(validate_images))
-        validate_batch_x = Variable(validate_tensor, volatile=True).cuda().float()
-        validate_batch_y = Variable(torch.from_numpy(validate_labels), volatile=True).cuda().long()
-        validate_output = net(validate_batch_x)
-        _, predict_batch_y = torch.max(validate_output, 1)
-        validate_total += validate_batch_y.size(0)
-        validate_right += sum(predict_batch_y.data.cpu().numpy() == validate_batch_y.data.cpu().numpy())
-        accuracy = validate_right / validate_total
-        print("Epoch:{} ,validate_batch index:{}, validate_accuracy:{}".format(epoch, validate_batch_index,
-                                                                               accuracy))
-    net.eval()
+    if not model_2:
+        for validate_batch_index, validate_images, validate_labels in data.generate_validate_data():
+            validate_tensor = normalize(torch.from_numpy(validate_images))
+            validate_batch_x = Variable(validate_tensor, volatile=True).cuda().float()
+            validate_batch_y = Variable(torch.from_numpy(validate_labels), volatile=True).cuda().long()
+            validate_output = net(validate_batch_x)
+            _, predict_batch_y = torch.max(validate_output, 1)
+            validate_total += validate_batch_y.size(0)
+            validate_right += sum(predict_batch_y.data.cpu().numpy() == validate_batch_y.data.cpu().numpy())
+            accuracy = validate_right / validate_total
+            print("Epoch:{} ,validate_batch index:{}, validate_accuracy:{}".format(epoch, validate_batch_index,
+                                                                                   accuracy))
+        net.eval()
 
-    accuracy = validate_right / float(validate_total)
-    print("Epoch:{}, validate accuracy: {}".format(epoch, accuracy))
-    return accuracy
+        accuracy = validate_right / float(validate_total)
+        print("Epoch:{}, validate accuracy: {}".format(epoch, accuracy))
+        return accuracy
+    else:
+        for validate_batch_index, validate_images, validate_labels in data.generate_train_data_model_2():
+            validate_tensor = normalize(torch.from_numpy(validate_images))
+            validate_batch_x = Variable(validate_tensor, volatile=True).cuda().float()
+            validate_batch_y = Variable(torch.from_numpy(validate_labels), volatile=True).cuda().long()
+            validate_output = net(validate_batch_x)
+            _, predict_batch_y = torch.max(validate_output, 1)
+            validate_total += validate_batch_y.size(0)
+            validate_right += sum(predict_batch_y.data.cpu().numpy() == validate_batch_y.data.cpu().numpy())
+            accuracy = validate_right / validate_total
+            print("Epoch:{} ,validate_batch index:{}, validate_accuracy:{}".format(epoch, validate_batch_index,
+                                                                                   accuracy))
+        net.eval()
+
+        accuracy = validate_right / float(validate_total)
+        print("Epoch:{}, validate accuracy: {}".format(epoch, accuracy))
+        return accuracy
 
 
-def validate_analysis(net: Net, data: SeedlingsData, normalize: transforms.Normalize):
-    truth_pred=[]
-    previous_size = data.batch_size
-    data.set_batch_size(1)
-    for validate_batch_index, validate_images, validate_labels in data.generate_validate_data():
-        validate_tensor = normalize(torch.from_numpy(validate_images))
-        validate_batch_x = Variable(validate_tensor, volatile=True).cuda().float()
-        validate_batch_y = Variable(torch.from_numpy(validate_labels), volatile=True).cuda().long()
-        validate_output = net(validate_batch_x)
-        _, predict_batch_y = torch.max(validate_output, 1)
-        truth_pred.append([validate_batch_y.data[0], predict_batch_y.data[0]])
-    truth_pred = np.array(truth_pred)
-    for i in range(0, 12):
-        species_pred = truth_pred[truth_pred[:, 0] == i]
-        acc = np.sum(species_pred[:, 1] == i) / species_pred.shape[0]
-        print("Species:{}, accuracy: {}".format(SeedlingsData.seedlings_labels[i], acc))
-    data.set_batch_size(previous_size)
+def validate_analysis(net: Net, data: SeedlingsData, normalize: transforms.Normalize, model_2=False):
+    if not model_2:
+        truth_pred = []
+        previous_size = data.batch_size
+        data.set_batch_size(1)
+        for validate_batch_index, validate_images, validate_labels in data.generate_validate_data():
+            validate_tensor = normalize(torch.from_numpy(validate_images))
+            validate_batch_x = Variable(validate_tensor, volatile=True).cuda().float()
+            validate_batch_y = Variable(torch.from_numpy(validate_labels), volatile=True).cuda().long()
+            validate_output = net(validate_batch_x)
+            _, predict_batch_y = torch.max(validate_output, 1)
+            truth_pred.append([validate_batch_y.data[0], predict_batch_y.data[0]])
+        truth_pred = np.array(truth_pred)
+        for i in range(0, 12):
+            species_pred = truth_pred[truth_pred[:, 0] == i]
+            acc = np.sum(species_pred[:, 1] == i) / species_pred.shape[0]
+            print("Species:{}, accuracy: {}".format(SeedlingsData.seedlings_labels[i], acc))
+        data.set_batch_size(previous_size)
+    else:
+        truth_pred = []
+        previous_size = data.batch_size
+        data.set_batch_size(1)
+        for validate_batch_index, validate_images, validate_labels in data.generate_validate_data_model_2():
+            validate_tensor = normalize(torch.from_numpy(validate_images))
+            validate_batch_x = Variable(validate_tensor, volatile=True).cuda().float()
+            validate_batch_y = Variable(torch.from_numpy(validate_labels), volatile=True).cuda().long()
+            validate_output = net(validate_batch_x)
+            _, predict_batch_y = torch.max(validate_output, 1)
+            truth_pred.append([validate_batch_y.data[0], predict_batch_y.data[0]])
+        truth_pred = np.array(truth_pred)
+        for i in range(0, 12):
+            species_pred = truth_pred[truth_pred[:, 0] == i]
+            acc = np.sum(species_pred[:, 1] == i) / species_pred.shape[0]
+            print("Species:{}, accuracy: {}".format(SeedlingsData.seedlings_labels[i], acc))
+        data.set_batch_size(previous_size)
 
-def save_model(net: Net, save_directory, accuracy=0.0, is_best=False):
+
+def save_model(net: Net, save_directory, accuracy=0.0, is_best=False, prefix: str = ""):
     if not os.path.exists(save_directory):
         os.mkdir(save_directory)
     if not is_best:
         current_time = time.strftime("%Y%m%d_%H%M", time.localtime())
-        file_name = current_time + "_" + str(accuracy) + ".pkl"
+        file_name = prefix + "_" + net.model_name + "_" + current_time + "_" + str(accuracy) + ".pkl"
         file_path = os.path.join(save_directory, file_name)
         torch.save(net, file_path)
     else:
-        file_path = os.path.join(constants.save_file_directory, "best.pkl")
+        file_path = os.path.join(constants.save_file_directory, prefix + "_" + net.model_name + "_" + "best.pkl")
         torch.save(net, file_path)
 
 
@@ -169,13 +241,13 @@ def load_model(path: str):
 
 if __name__ == "__main__":
     net_path = None
-    epochs = 20
+    input_epochs = 8
     if len(sys.argv) == 3:
         net_path = sys.argv[1]
-        epochs = int(sys.argv[2])
+        input_epochs = int(sys.argv[2])
 
         print(net_path)
-        print(epochs)
+        print(input_epochs)
 
     if len(sys.argv) == 2:
         net_path = sys.argv[1]
@@ -183,7 +255,7 @@ if __name__ == "__main__":
         print(net_path)
 
     # Train network
-    train(constants.save_file_directory, net_path, epochs,validate = 0)
+    train(constants.save_file_directory, net_path, input_epochs, validate=0.2, model_2=True)
     # Test
     best_model_path = os.path.join(constants.save_file_directory, "best.pkl")
     test(best_model_path)
