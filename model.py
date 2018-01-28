@@ -4,11 +4,10 @@ import torchvision.models as models
 
 INPUT_CHANNELS = 3
 SPECIES_SIZE = 12
-MODEL_2_SPECIES_SIZE = 2
 
 
 class Net(nn.Module):
-    def __init__(self, model_name, model_2=False):
+    def __init__(self, model_name):
         super(Net, self).__init__()
         self.model_name = model_name
         if model_name == 'resnet50':
@@ -39,10 +38,7 @@ class Net(nn.Module):
         for param in self.model.parameters():
             param.requires_grad = True
         self.fc1 = nn.Linear(1024, 120)
-        if not model_2:
-            self.fc2 = nn.Linear(120, SPECIES_SIZE)
-        else:
-            self.fc2 = nn.Linear(120, MODEL_2_SPECIES_SIZE)
+        self.fc2 = nn.Linear(120, SPECIES_SIZE)
         self.dropout = nn.Dropout(p=0.2)
 
     def forward(self, x):
