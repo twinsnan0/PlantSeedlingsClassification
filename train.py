@@ -19,10 +19,9 @@ accuracy_list = [0.0]
 
 def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
     data = SeedlingsData()
-    data.load(train_data_paths=[constants.train_output_resize_file_path, constants.train_output_rotate_file_path,
-                                constants.train_output_crop_file_path],
+    data.load(train_data_paths=[constants.train_output_resize_file_path, constants.train_output_rotate_file_path,constants.train_output_crop_file_path],
               test_data_paths=[constants.test_output_resize_file_path], validate=validate)
-    data.set_batch_size(64)
+    data.set_batch_size(128)
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -39,7 +38,7 @@ def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
 
     optimizer = optim.Adam(net.parameters(), lr=0.00005)
 
-    for epoch in range(0, epochs):
+    for epoch in range(0, 10):
         # Shuffle again
         # data.shuffle()
         train_epoch(net, data, epoch, normalize, optimizer)
@@ -49,9 +48,10 @@ def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
             save_model(net, save_directory, accuracy=accuracy)
             if accuracy_list.index(max(accuracy_list)) == len(accuracy_list) - 1:
                 save_model(net, save_directory, is_best=True)
+                
+            validate_analysis(net, data, normalize)
         else:
             save_model(net, save_directory, is_best=True)
-        validate_analysis(net, data, normalize)
     del net
 
 
@@ -142,12 +142,14 @@ def validate_analysis(net: Net, data: SeedlingsData, normalize: transforms.Norma
         validate_output = net(validate_batch_x)
         _, predict_batch_y = torch.max(validate_output, 1)
         truth_pred.append([validate_batch_y.data[0], predict_batch_y.data[0]])
-        truth_pred = np.array(truth_pred)
+    truth_pred = np.array(truth_pred)
     for i in range(0, 12):
         species_pred = truth_pred[truth_pred[:,0] == i]
-        acc = np.sum(species_pred[:,1] == 1) / species_pred.shape[0]
+        acc = []
+        for j in range(0, 12):
+            acc.append(np.sum(species_pred[:, 1] == j) / species_pred.shape[0])
         print("Species:{}, accuracy: {}".format(SeedlingsData.seedlings_labels[i], acc))
-
+    data.set_batch_size(128)
 
 def save_model(net: Net, save_directory, accuracy=0.0, is_best=False):
     if not os.path.exists(save_directory):
@@ -182,7 +184,7 @@ if __name__ == "__main__":
         print(net_path)
 
     # Train network
-    train(constants.save_file_directory, net_path, epochs)
+    train(constants.save_file_directory, net_path, epochs,validate = 0)
     # Test
     best_model_path = os.path.join(constants.save_file_directory, "best.pkl")
     test(best_model_path)

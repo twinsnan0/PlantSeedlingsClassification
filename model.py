@@ -10,8 +10,8 @@ class Net(nn.Module):
     def __init__(self, model_name):
         super(Net, self).__init__()
         self.model_name = model_name
-        if model_name == 'resnet101':
-            self.model = models.resnet101(pretrained=True)
+        if model_name == 'resnet50':
+            self.model = models.resnet50(pretrained=True)
             self.model.fc = nn.Linear(2048, 1024)
 
         elif model_name == 'resnet152':
