@@ -103,7 +103,9 @@ def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms
         if net.model_name == 'resnet50_test':
             prob, mask, _ = remove_background(images)
             plant_area = np.sum(mask, (1, 2))
+            plant_area = Variable(plant_area).cuda.float()
             sum_prob = np.sum(prob, (1, 2))
+            sum_prob = Variable(sum_prob).cuda().float()
             output = net(batch_x, plant_area, sum_prob)
         else:
             output = net(batch_x)
