@@ -25,16 +25,27 @@ def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2, 
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
-    if model_path is not None:
-        net = load_model(model_path)
-    else:
-        # Create network
-        print("select model in ['resnet50','resnet101', 'resnet152', 'densenet161', 'densenet201', 'inception_v3']")
-        model = input("model: ")
-        net = Net(model)
-        print(net)
+    if not model_2:
+        if model_path is not None:
+            net = load_model(model_path)
+        else:
+            # Create network
+            print("select model in ['resnet50','resnet101', 'resnet152', 'densenet161', 'densenet201', 'inception_v3']")
+            model = input("model: ")
+            net = Net(model)
+            print(net)
 
-    net.cuda()
+    else:
+        if model_path is not None:
+            net = load_model(model_path)
+        else:
+            # Create network
+            print("select model in ['resnet50','resnet101', 'resnet152', 'densenet161', 'densenet201', 'inception_v3']")
+            model = input("model: ")
+            net = Net(model, True)
+            print(net)
+
+        net.cuda()
 
     optimizer = optim.Adam(net.parameters(), lr=0.00005)
 
@@ -200,7 +211,9 @@ def validate_analysis(net: Net, data: SeedlingsData, normalize: transforms.Norma
         truth_pred = np.array(truth_pred)
         for i in range(0, 12):
             species_pred = truth_pred[truth_pred[:, 0] == i]
-            acc = np.sum(species_pred[:, 1] == i) / species_pred.shape[0]
+            acc = []
+            for j in range(0, 12):
+                acc.append(np.sum(species_pred[:, 1] == j) / species_pred.shape[0])
             print("Species:{}, accuracy: {}".format(SeedlingsData.seedlings_labels[i], acc))
         data.set_batch_size(previous_size)
     else:
