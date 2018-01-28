@@ -49,7 +49,7 @@ def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
             if accuracy_list.index(max(accuracy_list)) == len(accuracy_list) - 1:
                 save_model(net, save_directory, is_best=True, prefix='model')
 
-            validate_analysis(net, data, normalize)
+            # validate_analysis(net, data, normalize)
         else:
             save_model(net, save_directory, is_best=True, prefix='model')
 
@@ -72,7 +72,22 @@ def test(model_path: str = None):
         for test_image_dir, test_image in data.generate_test_data():
             test_tensor = normalize(torch.from_numpy(test_image))
             test_x = Variable(test_tensor, volatile=True).cuda().float()
-            test_output = net(test_x)
+
+            if net.model_name == 'resnet50_test':
+                prob, mask, _ = remove_background(test_image)
+                plant_area = np.sum(mask, (1, 2))
+                sum_prob = np.divide(np.sum(prob, (1, 2)), plant_area)
+
+                plant_area = np.reshape(plant_area, (data.batch_size, 1))
+                plant_area = Variable(torch.from_numpy(plant_area)).cuda().float()
+
+                sum_prob = np.reshape(sum_prob, (data.batch_size, 1))
+                sum_prob = Variable(torch.from_numpy(sum_prob)).cuda().float()
+
+                test_output = net(test_x, plant_area, sum_prob)
+            else:
+                test_output = net(test_x)
+
             _, predict_y = torch.max(test_output, 1)
             print("Predict result:")
             print(predict_y)
@@ -103,9 +118,14 @@ def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms
         if net.model_name == 'resnet50_test':
             prob, mask, _ = remove_background(images)
             plant_area = np.sum(mask, (1, 2))
-            plant_area = Variable(plant_area).cuda.float()
-            sum_prob = np.sum(prob, (1, 2))
-            sum_prob = Variable(sum_prob).cuda().float()
+            sum_prob = np.divide(np.sum(prob, (1, 2)), plant_area)
+
+            plant_area = np.reshape(plant_area, (data.batch_size, 1))
+            plant_area = Variable(torch.from_numpy(plant_area)).cuda().float()
+
+            sum_prob = np.reshape(sum_prob, (data.batch_size, 1))
+            sum_prob = Variable(torch.from_numpy(sum_prob)).cuda().float()
+
             output = net(batch_x, plant_area, sum_prob)
         else:
             output = net(batch_x)
@@ -131,7 +151,22 @@ def validate_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transfo
         validate_tensor = normalize(torch.from_numpy(validate_images))
         validate_batch_x = Variable(validate_tensor, volatile=True).cuda().float()
         validate_batch_y = Variable(torch.from_numpy(validate_labels), volatile=True).cuda().long()
-        validate_output = net(validate_batch_x)
+
+        if net.model_name == 'resnet50_test':
+            prob, mask, _ = remove_background(validate_images)
+            plant_area = np.sum(mask, (1, 2))
+            sum_prob = np.divide(np.sum(prob, (1, 2)), plant_area)
+
+            plant_area = np.reshape(plant_area, (data.batch_size, 1))
+            plant_area = Variable(torch.from_numpy(plant_area)).cuda().float()
+
+            sum_prob = np.reshape(sum_prob, (data.batch_size, 1))
+            sum_prob = Variable(torch.from_numpy(sum_prob)).cuda().float()
+
+            validate_output = net(validate_batch_x, plant_area, sum_prob)
+        else:
+            validate_output = net(validate_batch_x)
+
         _, predict_batch_y = torch.max(validate_output, 1)
         validate_total += validate_batch_y.size(0)
         validate_right += sum(predict_batch_y.data.cpu().numpy() == validate_batch_y.data.cpu().numpy())
