@@ -169,7 +169,7 @@ def load_model(path: str):
 
 if __name__ == "__main__":
     net_path = None
-    epochs = 20
+    epochs = 10
     if len(sys.argv) == 3:
         net_path = sys.argv[1]
         epochs = int(sys.argv[2])
