@@ -31,7 +31,7 @@ def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
         net = load_model(model_path)
     else:
         # Create network
-        print("select model in ['resnet50','resnet101', 'resnet152', 'densenet161', 'densenet201', 'inception_v3']")
+        print("select model in ['resnet50+', 'resnet50','resnet101', 'resnet152', 'densenet161', 'densenet201', 'inception_v3']")
         model = input("model: ")
         net = Net(model)
         print(net)
@@ -73,18 +73,25 @@ def test(model_path: str = None):
             test_tensor = normalize(torch.from_numpy(test_image))
             test_x = Variable(test_tensor, volatile=True).cuda().float()
 
-            if net.model_name == 'resnet50_test':
-                prob, mask, _ = remove_background(test_image)
+            if net.model_name == 'resnet50+':
+                prob, mask, _ = remove_background(images)
                 plant_area = np.sum(mask, (1, 2))
-                sum_prob = np.divide(np.sum(prob, (1, 2)), plant_area)
-
+                avg_prob = np.divide(np.sum(prob * mask, (1, 2)), plant_area,
+                                     out=np.zeros_like(plant_area).astype(np.float),
+                                     where=plant_area != 0)
+                avg_green = np.divide(np.sum(images[:, 1, :, :] * mask, (1, 2)),
+                                      plant_area, out=np.zeros_like(plant_area).astype(np.float),
+                                      where=plant_area != 0)
                 plant_area = np.reshape(plant_area, (data.batch_size, 1))
                 plant_area = Variable(torch.from_numpy(plant_area)).cuda().float()
 
-                sum_prob = np.reshape(sum_prob, (data.batch_size, 1))
-                sum_prob = Variable(torch.from_numpy(sum_prob)).cuda().float()
+                avg_prob = np.reshape(avg_prob, (data.batch_size, 1))
+                avg_prob = Variable(torch.from_numpy(avg_prob)).cuda().float()
 
-                test_output = net(test_x, plant_area, sum_prob)
+                avg_green = np.reshape(avg_green, (data.batch_size, 1))
+                avg_green = Variable(torch.from_numpy(avg_green)).cuda().float()
+
+                test_output = net(test_x, plant_area, avg_prob, avg_green)
             else:
                 test_output = net(test_x)
 
@@ -115,18 +122,25 @@ def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms
         batch_x = Variable(tensor).cuda().float()
         batch_y = Variable(torch.from_numpy(labels)).cuda().long()
 
-        if net.model_name == 'resnet50_test':
+        if net.model_name == 'resnet50+':
             prob, mask, _ = remove_background(images)
             plant_area = np.sum(mask, (1, 2))
-            sum_prob = np.divide(np.sum(prob, (1, 2)), plant_area)
-
+            avg_prob = np.divide(np.sum(prob*mask, (1, 2)), plant_area,
+                                 out=np.zeros_like(plant_area).astype(np.float),
+                                 where=plant_area != 0)
+            avg_green = np.divide(np.sum(images[:, 1, :, :] * mask, (1, 2)),
+                                  plant_area, out=np.zeros_like(plant_area).astype(np.float),
+                                  where=plant_area != 0)
             plant_area = np.reshape(plant_area, (data.batch_size, 1))
             plant_area = Variable(torch.from_numpy(plant_area)).cuda().float()
 
-            sum_prob = np.reshape(sum_prob, (data.batch_size, 1))
-            sum_prob = Variable(torch.from_numpy(sum_prob)).cuda().float()
+            avg_prob = np.reshape(avg_prob, (data.batch_size, 1))
+            avg_prob = Variable(torch.from_numpy(avg_prob)).cuda().float()
 
-            output = net(batch_x, plant_area, sum_prob)
+            avg_green = np.reshape(avg_green, (data.batch_size, 1))
+            avg_green = Variable(torch.from_numpy(avg_green)).cuda().float()
+
+            output = net(batch_x, plant_area, avg_prob, avg_green)
         else:
             output = net(batch_x)
 
@@ -152,18 +166,25 @@ def validate_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transfo
         validate_batch_x = Variable(validate_tensor, volatile=True).cuda().float()
         validate_batch_y = Variable(torch.from_numpy(validate_labels), volatile=True).cuda().long()
 
-        if net.model_name == 'resnet50_test':
-            prob, mask, _ = remove_background(validate_images)
+        if net.model_name == 'resnet50+':
+            prob, mask, _ = remove_background(images)
             plant_area = np.sum(mask, (1, 2))
-            sum_prob = np.divide(np.sum(prob, (1, 2)), plant_area)
-
+            avg_prob = np.divide(np.sum(prob * mask, (1, 2)), plant_area,
+                                 out=np.zeros_like(plant_area).astype(np.float),
+                                 where=plant_area != 0)
+            avg_green = np.divide(np.sum(images[:, 1, :, :] * mask, (1, 2)),
+                                  plant_area, out=np.zeros_like(plant_area).astype(np.float),
+                                  where=plant_area != 0)
             plant_area = np.reshape(plant_area, (data.batch_size, 1))
             plant_area = Variable(torch.from_numpy(plant_area)).cuda().float()
 
-            sum_prob = np.reshape(sum_prob, (data.batch_size, 1))
-            sum_prob = Variable(torch.from_numpy(sum_prob)).cuda().float()
+            avg_prob = np.reshape(avg_prob, (data.batch_size, 1))
+            avg_prob = Variable(torch.from_numpy(avg_prob)).cuda().float()
 
-            validate_output = net(validate_batch_x, plant_area, sum_prob)
+            avg_green = np.reshape(avg_green, (data.batch_size, 1))
+            avg_green = Variable(torch.from_numpy(avg_green)).cuda().float()
+
+            validate_output = net(validate_batch_x, plant_area, avg_prob, avg_green)
         else:
             validate_output = net(validate_batch_x)
 
@@ -188,7 +209,29 @@ def validate_analysis(net: Net, data: SeedlingsData, normalize: transforms.Norma
         validate_tensor = normalize(torch.from_numpy(validate_images))
         validate_batch_x = Variable(validate_tensor, volatile=True).cuda().float()
         validate_batch_y = Variable(torch.from_numpy(validate_labels), volatile=True).cuda().long()
-        validate_output = net(validate_batch_x)
+
+        if net.model_name == 'resnet50+':
+            prob, mask, _ = remove_background(images)
+            plant_area = np.sum(mask, (1, 2))
+            avg_prob = np.divide(np.sum(prob * mask, (1, 2)), plant_area,
+                                 out=np.zeros_like(plant_area).astype(np.float),
+                                 where=plant_area != 0)
+            avg_green = np.divide(np.sum(images[:, 1, :, :] * mask, (1, 2)),
+                                  plant_area, out=np.zeros_like(plant_area).astype(np.float),
+                                  where=plant_area != 0)
+            plant_area = np.reshape(plant_area, (data.batch_size, 1))
+            plant_area = Variable(torch.from_numpy(plant_area)).cuda().float()
+
+            avg_prob = np.reshape(avg_prob, (data.batch_size, 1))
+            avg_prob = Variable(torch.from_numpy(avg_prob)).cuda().float()
+
+            avg_green = np.reshape(avg_green, (data.batch_size, 1))
+            avg_green = Variable(torch.from_numpy(avg_green)).cuda().float()
+
+            validate_output = net(validate_batch_x, plant_area, avg_prob, avg_green)
+        else:
+            validate_output = net(validate_batch_x)
+
         _, predict_batch_y = torch.max(validate_output, 1)
         truth_pred.append([validate_batch_y.data[0], predict_batch_y.data[0]])
     truth_pred = np.array(truth_pred)
