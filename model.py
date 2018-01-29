@@ -43,24 +43,32 @@ class Net(nn.Module):
 
         for param in self.model.parameters():
             param.requires_grad = True
+        self.fc1 = nn.Linear(1024, 120)
+        self.fc2 = nn.Linear(120, 20)
         if self.model_name == 'resnet50+':
-            self.fc1 = nn.Linear(1027, 120)
+            self.fc3 = nn.Linear(23, SPECIES_SIZE)
         else:
-            self.fc1 = nn.Linear(1024, 120)
-        self.fc2 = nn.Linear(120, SPECIES_SIZE)
+            self.fc3 = nn.Linear(20, SPECIES_SIZE)
+
         self.dropout = nn.Dropout(p=0.2)
 
     def forward(self, x, plant_area=None, avg_prob=None, avg_green=None):
         x = self.model(x)
-        x = x.view(-1, 1024)
+        x = self.dropout(x)
+        x = F.relu(x)
+        x = self.fc1(x)
+        x = self.dropout(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        x = self.dropout(x)
+        x = F.relu(x)
+        x = x.view(-1, 20)
         if self.model_name == 'resnet50+':
             x = torch.cat((x, plant_area, avg_prob, avg_green), dim=1)
         else:
             pass
-        x = self.dropout(x)
-        x = self.fc1(x)
         x = F.relu(x)
-        x = self.fc2(x)
+        x = self.fc3(x)
         return x
 
 

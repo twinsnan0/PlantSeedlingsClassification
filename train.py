@@ -74,12 +74,12 @@ def test(model_path: str = None):
             test_x = Variable(test_tensor, volatile=True).cuda().float()
 
             if net.model_name == 'resnet50+':
-                prob, mask, _ = remove_background(images)
+                prob, mask, _ = remove_background(test_image)
                 plant_area = np.sum(mask, (1, 2))
                 avg_prob = np.divide(np.sum(prob * mask, (1, 2)), plant_area,
                                      out=np.zeros_like(plant_area).astype(np.float),
                                      where=plant_area != 0)
-                avg_green = np.divide(np.sum(images[:, 1, :, :] * mask, (1, 2)),
+                avg_green = np.divide(np.sum(test_image[:, 1, :, :] * mask, (1, 2)),
                                       plant_area, out=np.zeros_like(plant_area).astype(np.float),
                                       where=plant_area != 0)
                 plant_area = np.reshape(plant_area, (data.batch_size, 1))
