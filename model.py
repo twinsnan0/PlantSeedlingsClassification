@@ -19,6 +19,10 @@ class Net(nn.Module):
         if self.model_name == 'resnet50':
             self.model = models.resnet50(pretrained=True)
             self.model.fc = nn.Linear(2048, 1024)
+            
+        if self.model_name == 'resnet101':
+            self.model = models.resnet101(pretrained=True)
+            self.model.fc = nn.Linear(2048, 1024)
 
         elif self.model_name == 'resnet152':
             self.model = models.resnet152(pretrained=True)
@@ -43,6 +47,23 @@ class Net(nn.Module):
 
         # for param in self.model.parameters():
         #     param.requires_grad = True
+        
+        # Train only the last several layers of the pretrained model
+        # https://discuss.pytorch.org/t/how-the-pytorch-freeze-network-in-some-layers-only-the-rest-of-the-training/7088
+        total_layers = 0
+        for _ in self.model.children():
+            total_layers = + 1
+        ct = 0
+        for child in self.model.children():
+            ct += 1
+            if ct < total_layers - 2:
+                for param in child.parameters():
+                    param.requires_grad = False
+            else:
+                for param in child.parameters():
+                    param.requires_grad = True
+                    
+        
         if self.model_name == 'resnet50+':
             self.fc1 = nn.Linear(1027, 120)
         else:
@@ -50,7 +71,7 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(120, SPECIES_SIZE)
         self.dropout1 = nn.Dropout(p=0.3)
         self.dropout2 = nn.Dropout(p=0.3)
-        self.bn = nn.BatchNorm2d(3)
+        self.bn = nn.BatchNorm2d(1024)
 
     def forward(self, x, plant_area=None, avg_prob=None, avg_green=None):
         x = self.model(x)

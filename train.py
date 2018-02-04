@@ -39,7 +39,7 @@ def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
 
     net.cuda()
 
-    optimizer = optim.Adam(net.parameters(), lr=1e-4, weight_decay=1e-5, amsgrad=True)
+    optimizer = optim.Adam(net.parameters(), lr=1e-4, weight_decay=1e-5)
 
     for epoch in range(0, epochs):
         train_epoch(net, data, epoch, normalize, optimizer)
@@ -117,7 +117,8 @@ def create_submission_file(filename):
 
 def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize, optimizer: Optimizer):
     losses = []
-
+    train_total = 0
+    train_right = 0
     for batch_index, images, labels in data.generate_train_data():
         tensor = normalize(torch.from_numpy(images))
         batch_x = Variable(tensor).cuda().float()
@@ -145,18 +146,24 @@ def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms
         else:
             output = net(batch_x)
 
+        _, predict_batch_y = torch.max(output, 1)
+
         optimizer.zero_grad()
         criterion = nn.CrossEntropyLoss()
         loss = criterion(output, batch_y)
         loss.backward()
         optimizer.step()
         losses.append(loss.data[0])
-        print("epoch:{}, batch index:{}, loss:{}".format(epoch, batch_index, loss.data[0]))
+        train_total += batch_y.size(0)
+        train_right += sum(predict_batch_y.data.cpu().numpy() == batch_y.data.cpu().numpy())
+        accuracy = train_right / train_total
+        print("epoch:{}, batch index:{}, accuracy:{}, loss:{}".format(epoch, batch_index, accuracy, loss.data[0]))
         # Validate
         if batch_index != 0 and batch_index % 100 == 0:
             pass
+    accuracy = train_right / train_total
+    print("epoch:{}, , average accuracy:{}, average train loss:{}".format(epoch, accuracy, sum(losses) / len(losses)))
 
-    print("epoch:{}, average train loss:{}".format(epoch, sum(losses) / len(losses)))
 
 
 def validate_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms.Normalize):
