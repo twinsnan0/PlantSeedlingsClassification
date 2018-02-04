@@ -41,25 +41,31 @@ class Net(nn.Module):
                 "wrong model, select 'resnet50+', 'resnet50','resnet101', 'resnet152', 'densenet161', 'densenet201' or "
                 "'inception_v3'")
 
-        for param in self.model.parameters():
-            param.requires_grad = True
+        # for param in self.model.parameters():
+        #     param.requires_grad = True
         if self.model_name == 'resnet50+':
             self.fc1 = nn.Linear(1027, 120)
         else:
             self.fc1 = nn.Linear(1024, 120)
         self.fc2 = nn.Linear(120, SPECIES_SIZE)
-        self.dropout = nn.Dropout(p=0.2)
+        self.dropout1 = nn.Dropout(p=0.3)
+        self.dropout2 = nn.Dropout(p=0.3)
+        self.bn = nn.BatchNorm2d(3)
 
     def forward(self, x, plant_area=None, avg_prob=None, avg_green=None):
         x = self.model(x)
+        x = self.bn(x)
+        x = F.relu(x)
+        x = self.dropout1(x)
+
         x = x.view(-1, 1024)
         if self.model_name == 'resnet50+':
             x = torch.cat((x, plant_area, avg_prob, avg_green), dim=1)
         else:
             pass
-        x = self.dropout(x)
         x = self.fc1(x)
         x = F.relu(x)
+        x = self.dropout2(x)
         x = self.fc2(x)
         return x
 

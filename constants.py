@@ -4,6 +4,7 @@ train_file_path = r"../PlantSeedlingsImage/train/train"
 train_output_resize_file_path = r"../PlantSeedlingsImage/train/resize"
 train_output_rotate_file_path = r"../PlantSeedlingsImage/train/rotate"
 train_output_crop_file_path = r"../PlantSeedlingsImage/train/crop"
+train_output_mirror_file_path = r"../PlantSeedlingsImage/train/mirror"
 train_output_remove_background_file_path = r"../PlantSeedlingsImage/train/remove_background"
 
 test_file_path = r"../PlantSeedlingsImage/test/test"

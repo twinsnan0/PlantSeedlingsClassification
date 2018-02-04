@@ -21,7 +21,7 @@ accuracy_list = [0.0]
 def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
     data = SeedlingsData()
     data.load(train_data_paths=[constants.train_output_resize_file_path, constants.train_output_rotate_file_path,
-                                constants.train_output_crop_file_path],
+                                constants.train_output_crop_file_path, constants.train_output_mirror_file_path],
               test_data_paths=[constants.test_output_resize_file_path], validate=validate)
     data.set_batch_size(128)
 
@@ -31,14 +31,15 @@ def train(save_directory: str, model_path: str = None, epochs=10, validate=0.2):
         net = load_model(model_path)
     else:
         # Create network
-        print("select model in ['resnet50+', 'resnet50','resnet101', 'resnet152', 'densenet161', 'densenet201', 'inception_v3']")
+        print(
+            "select model in ['resnet50+', 'resnet50','resnet101', 'resnet152', 'densenet161', 'densenet201', 'inception_v3']")
         model = input("model: ")
         net = Net(model)
         print(net)
 
     net.cuda()
 
-    optimizer = optim.Adam(net.parameters(), lr=0.00005)
+    optimizer = optim.Adam(net.parameters(), lr=1e-4, weight_decay=1e-5, amsgrad=True)
 
     for epoch in range(0, epochs):
         train_epoch(net, data, epoch, normalize, optimizer)
@@ -125,7 +126,7 @@ def train_epoch(net: Net, data: SeedlingsData, epoch: int, normalize: transforms
         if net.model_name == 'resnet50+':
             prob, mask, _ = remove_background(images)
             plant_area = np.sum(mask, (1, 2))
-            avg_prob = np.divide(np.sum(prob*mask, (1, 2)), plant_area,
+            avg_prob = np.divide(np.sum(prob * mask, (1, 2)), plant_area,
                                  out=np.zeros_like(plant_area).astype(np.float),
                                  where=plant_area != 0)
             avg_green = np.divide(np.sum(images[:, 1, :, :] * mask, (1, 2)),

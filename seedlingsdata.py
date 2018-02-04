@@ -49,6 +49,36 @@ class PreProcess(object):
                     print("Saved: ", output_file_name)
 
     @staticmethod
+    def mirror(source_path: str, output_path: str):
+        """
+        Mirror the images
+        :param source_path: source directory path
+        :param output_path: output directory path
+        :return:
+        """
+
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+
+        directories = os.listdir(source_path)
+        for directory in directories:
+            out_directory_path = os.path.join(output_path, directory)
+            if not os.path.exists(out_directory_path):
+                os.makedirs(out_directory_path)
+            for file in os.listdir(os.path.join(source_path, directory)):
+                # Rotate
+                image = cv2.imread(os.path.join(source_path, directory, file))
+
+                rotated = PreProcess._mirror(image)
+                last_index = file.rfind(".")
+                origin_name = file[0:last_index]
+                output_file_name = os.path.join(out_directory_path,
+                                                str(origin_name) + "_mirror" ".png")
+                rotated = PreProcess._resize(rotated, WIDTH, HEIGHT)
+                cv2.imwrite(output_file_name, rotated)
+                print("Saved: ", output_file_name)
+
+    @staticmethod
     def resize(source_path: str, output_path: str, resize_width=WIDTH, resize_height=HEIGHT):
         """
         Resize the image
@@ -155,6 +185,11 @@ class PreProcess(object):
         rotated = cv2.warpAffine(image, matrix, (w, h))
 
         return rotated
+
+    @staticmethod
+    def _mirror(image):
+        mirrored = cv2.flip(image, 1)
+        return mirrored
 
     @staticmethod
     def _crop(image, crop_ratio):
@@ -331,6 +366,9 @@ if __name__ == "__main__":
     # Crop
     # pre_process.crop(constants.train_output_resize_file_path, constants.train_output_crop_file_path)
 
+    # Mirror
+    pre_process.mirror(constants.train_output_resize_file_path, constants.train_output_mirror_file_path)
+
     # Remove background
     # pre_process.remove_background(constants.train_output_resize_file_path,
     #                               constants.train_output_remove_background_file_path)
@@ -339,9 +377,9 @@ if __name__ == "__main__":
     # pre_process.resize(constants.test_file_path, constants.test_output_resize_file_path)
 
     # After pre-processing, we need to input data for training
-    data = SeedlingsData()
-    data.load([constants.train_output_resize_file_path, constants.train_output_rotate_file_path,
-               constants.train_output_crop_file_path], [constants.test_output_resize_file_path])
+    # data = SeedlingsData()
+    # data.load([constants.train_output_resize_file_path, constants.train_output_rotate_file_path,
+    #           constants.train_output_crop_file_path], [constants.test_output_resize_file_path])
 
     # Iterate method
     # for images, labels in data.generate_train_data():
@@ -349,7 +387,7 @@ if __name__ == "__main__":
     #     print(images.shape)
     #     print(labels.shape)
 
-    for index, images, labels in data.generate_train_data():
-        print(type(images))
-        print(images.shape)
-        print(labels)
+    # for index, images, labels in data.generate_train_data():
+    #     print(type(images))
+    #     print(images.shape)
+    #     print(labels)
