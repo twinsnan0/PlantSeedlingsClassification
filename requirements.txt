@@ -43,7 +43,7 @@ progressbar2==3.34.3
 prompt-toolkit==1.0.15
 py==1.5.2
 pycparser==2.18
-Pygments==2.2.0
+Pygments==2.7.4
 Pympler==0.5
 pyOpenSSL==17.5.0
 pyparsing==2.2.0
