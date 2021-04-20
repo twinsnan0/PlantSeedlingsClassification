@@ -41,7 +41,7 @@ Pillow==5.0.0
 pluggy==0.6.0
 progressbar2==3.34.3
 prompt-toolkit==1.0.15
-py==1.5.2
+py==1.10.0
 pycparser==2.18
 Pygments==2.2.0
 Pympler==0.5
